@@ -1,0 +1,48 @@
+services:
+  # Banco de DESENVOLVIMENTO
+  postgres:
+    image: bitnami/postgresql:latest
+    container_name: talenntloop
+    environment:
+      POSTGRES_DB: talenntloop
+      POSTGRES_USER: docker
+      POSTGRES_PASSWORD: docker
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U docker -d talenntloop -h 127.0.0.1 -p 5432",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Banco de TESTE (E2E) — porta 5433
+  postgres_test:
+    image: bitnami/postgresql:latest
+    container_name: talenntloop_test
+    environment:
+      POSTGRES_DB: talenntloop_test
+      POSTGRES_USER: docker
+      POSTGRES_PASSWORD: docker
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U docker -d talenntloop_test -h 127.0.0.1 -p 5432",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
+  postgres_test_data:

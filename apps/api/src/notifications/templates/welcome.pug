@@ -1,0 +1,127 @@
+doctype html
+html(lang="pt-BR")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    title Bem-vindo ao talenntloop
+    style
+      include ./styles/base.css
+      include ./styles/welcome.css
+
+  body
+    .container
+      .header
+        h1 🎉 Bem-vindo ao talenntloop!
+        p Sua jornada para o sucesso começa agora
+
+      .content
+        .welcome-box
+          h2 Olá, #{contactName}!
+          p É com grande prazer que damos as boas-vindas à 
+            strong #{companyName}
+            |  na família talenntloop!
+          p Sua assinatura foi processada com sucesso e sua plataforma CRM já está sendo preparada.
+
+        .plan-info
+          h3 📋 Detalhes da sua assinatura
+          table.info-table
+            tr
+              td.label Empresa:
+              td.value #{companyName}
+            tr
+              td.label Plano:
+              td.value
+                span.highlight #{planName}
+                if planFeatures
+                  br
+                  small.features #{planFeatures}
+            tr
+              td.label Subdomínio/TenantId:
+              td.value
+                span.highlight #{subdomain}
+            tr
+              td.label Email Admin:
+              td.value #{contactEmail}
+            tr
+              td.label ID da Conta:
+              td.value
+                code.code-block #{tenantId}
+            tr
+              td.label Status:
+              td.value
+                span.status-active ✅ ATIVO
+
+        if temporaryPassword
+          .credentials-box
+            h3 🔐 Suas Credenciais de Acesso
+            table.credentials-table
+              tr
+                td.label Email:
+                td.value(style="color: #0369a1; font-family: monospace;") #{contactEmail}
+              tr
+                td.label Senha:
+                td.value
+                  span.password-display #{temporaryPassword}
+
+            .security-notice
+              span.icon 🔒
+              div
+                p.title Política de Segurança da Senha
+                ul.requirements
+                  li ✅ Contém pelo menos 1 letra maiúscula (A-Z)
+                  li ✅ Contém pelo menos 1 letra minúscula (a-z)
+                  li ✅ Contém pelo menos 1 número (0-9)
+                  li ✅ Contém pelo menos 1 símbolo (!@#$%&*)
+                p.warning ⚠️ IMPORTANTE: Altere esta senha no primeiro acesso por segurança.
+
+        .next-steps
+          h3 🚀 Primeiros Passos na Plataforma
+          .steps-grid
+            .step
+              .step-number 1
+              div
+                strong Faça seu primeiro acesso
+                p Use suas credenciais para acessar a plataforma e familiarize-se com a interface
+            
+            .step
+              .step-number 2
+              div
+                strong Altere sua senha
+                p Por segurança, crie uma senha personalizada em Configurações > Perfil
+            
+            .step
+              .step-number 3
+              div
+                strong Configure sua empresa
+                p Adicione logotipo, informações da empresa e personalize as configurações
+            
+            .step
+              .step-number 4
+              div
+                strong Adicione sua equipe
+                p Convide usuários e configure permissões em Configurações > Usuários
+            
+            .step
+              .step-number 5
+              div
+                strong Importe seus dados
+                p Importe contatos, propriedades e dados existentes usando nossas ferramentas
+
+        .support-info
+          p 💡 
+            strong Dica:
+            |  Precisa de ajuda? Nossa equipe oferece onboarding gratuito para novos clientes!
+
+        .cta-button
+          a(href=`http://localhost:3001/signin?tenant=${subdomain}`) 🚀 Acessar Minha Plataforma
+
+      .footer
+        p Equipe talenntloop
+        em A plataforma CRM de confiança
+        .footer-links
+          a(href="mailto:suporte@talenntloop.com") 📧 suporte@talenntloop.com
+          span |
+          a(href="tel:+5511999999999") 📱 (11) 99999-9999
+          span |
+          a(href="https://talenntloop.com") 🌐 talenntloop.com
+        p © 2025 talenntloop. Todos os direitos reservados.

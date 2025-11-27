@@ -1,0 +1,223 @@
+// ============================
+// Prisma Generator & Datasource
+// ============================
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================
+// Enums
+// ============================
+enum SubStatus {
+  ACTIVE
+  PENDING
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+// ============================
+// Tenant
+// ============================
+model Tenant {
+  id        String    @id @default(uuid())
+  name      String
+  slug      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  users        User[]
+  subscription Subscription?
+
+  @@index([deletedAt])
+}
+
+// ============================
+// Usuários
+// ============================
+model User {
+  id        String    @id @default(uuid())
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  name      String
+  email     String
+  password  String
+  isActive  Boolean   @default(true)
+  avatar    String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Two-Factor Authentication
+  twoFactorEnabled     Boolean  @default(false)
+  twoFactorSecret      String?
+  twoFactorBackupCodes String[] @default([])
+
+  passwordResets PasswordReset[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId, isActive])
+  @@index([deletedAt])
+}
+
+// ============================
+// Password Reset Tokens
+// ============================
+model PasswordReset {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([token])
+  @@index([userId, createdAt])
+}
+
+// ============================
+// Planos / Assinaturas / Uso - NEW
+// ============================
+model Plan {
+  id          String  @id @default(uuid())
+  name        String
+  price       Float
+  currency    String  @default("BRL")
+  description String?
+
+  // Resource Limits (Business Logic)
+  maxUsers           Int?
+  maxContacts        Int?
+  hasAPI             Boolean @default(false)
+  trialDurationHours Int?    @default(168) // 7 dias em horas
+
+  // Stripe integration
+  stripeProductId String? @unique
+  stripePriceId   String? @unique
+
+  subscriptions Subscription[]
+
+  @@unique([name])
+}
+
+model Subscription {
+  id       String @id @default(uuid())
+  tenantId String @unique
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  planId String
+  plan   Plan   @relation(fields: [planId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  status     SubStatus @default(ACTIVE)
+  startedAt  DateTime  @default(now())
+  expiresAt  DateTime?
+  renewedAt  DateTime?
+  canceledAt DateTime?
+
+  // Stripe integration
+  stripeCustomerId     String? @unique
+  stripeSubscriptionId String? @unique
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+
+  // Histórico de mudanças
+  history SubscriptionHistory[]
+
+  // add-ons podem ser adicionados depois se necessário
+}
+
+enum SubscriptionAction {
+  CREATED
+  UPGRADED
+  DOWNGRADED
+  RENEWED
+  CANCELED
+  REACTIVATED
+  EXPIRED
+}
+
+model SubscriptionHistory {
+  id             String       @id @default(uuid())
+  tenantId       String
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  // Ação realizada
+  action SubscriptionAction
+
+  // Plano anterior e novo (para tracking de mudanças)
+  previousPlanId    String?
+  previousPlanName  String?
+  previousPlanPrice Float?
+  previousExpiresAt DateTime?
+
+  newPlanId    String?
+  newPlanName  String?
+  newPlanPrice Float?
+  newExpiresAt DateTime?
+
+  // Detalhes da ação
+  reason      String? // Ex: "Manual upgrade", "Stripe webhook", etc
+  notes       String? // Notas adicionais
+  triggeredBy String? // user ID ou "system" ou "stripe"
+
+  createdAt DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([subscriptionId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([tenantId, createdAt])
+}
+
+// ============================
+// Email Logs (Limit Alerts)
+// ============================
+model EmailLog {
+  id        String   @id @default(uuid())
+  tenantId  String
+  type      String // LIMIT_ALERT, WELCOME, etc.
+  limitType String? // Propriedades, Usuários, Contatos
+  sentAt    DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, type, limitType, sentAt])
+  @@index([sentAt])
+}
+
+// ============================
+// Stripe Checkout Sessions
+// ============================
+model StripeCheckoutSession {
+  id               String @id @default(uuid())
+  sessionId        String @unique // Stripe session ID
+  stripeCustomerId String
+  companyName      String
+  contactName      String
+  contactEmail     String
+  domain           String
+  planId           String
+  planName         String
+
+  // Success tracking
+  successToken String?   @unique // Token para acessar página de sucesso
+  completed    Boolean   @default(false)
+  completedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  expiresAt DateTime // Expira após 24 horas
+
+  @@unique([domain])
+  @@index([sessionId])
+  @@index([stripeCustomerId])
+  @@index([successToken])
+  @@index([createdAt])
+}

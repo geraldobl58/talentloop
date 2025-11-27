@@ -1,0 +1,60 @@
+doctype html
+html(lang="pt-BR")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    title Alerta de Limite - talenntloop
+    style
+      include ./styles/base.css
+      include ./styles/alert.css
+
+  body
+    .container
+      .header.header-warning
+        h1 ⚠️ Alerta de Limite
+        p #{companyName}
+
+      .content
+        p Olá 
+          strong #{contactName}
+          |,
+
+        p Você está próximo do limite do seu plano 
+          strong #{planName}
+          |.
+
+        .usage-box
+          h3 📊 Uso Atual
+          .usage-stat
+            .stat-label #{limitType}
+            .stat-value #{currentUsage} / #{maxLimit}
+          
+          .progress-bar
+            .progress-fill(style=`width: ${percentageUsed}%`)
+          
+          .usage-percentage #{Math.round(percentageUsed)}% utilizado
+
+        p Para continuar aproveitando todos os recursos sem interrupções, considere fazer upgrade do seu plano.
+
+        .cta-button
+          a(href="https://talenntloop.com/dashboard/settings?tab=planos") 🚀 Fazer Upgrade
+
+        .benefits-box
+          h4 ✨ Benefícios do Upgrade
+          ul.benefits-list
+            li Mais #{limitType} para gerenciar
+            li Recursos avançados
+            li Suporte prioritário
+            li Acesso completo à API
+
+      .footer
+        p Atenciosamente,
+        strong Equipe talenntloop
+        
+        hr
+        
+        p Este é um email automático. Por favor, não responda.
+        .footer-links
+          a(href="mailto:suporte@talenntloop.com") 📧 Suporte
+          span |
+          a(href="https://talenntloop.com") 🌐 Website

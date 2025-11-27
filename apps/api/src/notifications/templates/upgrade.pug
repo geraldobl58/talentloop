@@ -1,0 +1,73 @@
+doctype html
+html(lang="pt-BR")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    title Plano Atualizado - talenntloop
+    style
+      include ./styles/base.css
+      include ./styles/upgrade.css
+
+  body
+    .container
+      .header.header-success
+        h1 🚀 Plano Atualizado!
+        p #{companyName}
+
+      .content
+        p Olá 
+          strong #{contactName}
+          |,
+
+        p Que alegria! Sua assinatura foi atualizada com sucesso. Agora você tem acesso a todos os recursos premium do plano 
+          strong #{newPlanName}
+          |.
+
+        .plan-box
+          h3 📊 Seu Novo Plano
+          
+          .plan-item
+            p.plan-label Plano anterior:
+            p.plan-value.old #{oldPlanName}
+          
+          .plan-item
+            p.plan-label Novo plano:
+            p.plan-value.new #{newPlanName}
+          
+          .plan-item
+            p.plan-label Valor:
+            p.plan-value.price
+              span.currency #{currency}
+              span.amount #{newPlanPrice}
+              span.period  por mês
+          
+          .plan-item
+            p.plan-label Seus novos recursos incluem:
+            ul.features-list
+              li ✅ #{newMaxUsers} usuários
+              li ✅ #{newMaxContacts} contatos
+              if hasAPI
+                li ✅ Acesso completo à API
+
+        .next-steps-box
+          h4 ✨ Próximos Passos
+          ul.steps-list
+            li Explore os novos recursos da sua conta
+            li Convidar mais usuários para sua equipe
+            li Integre com suas ferramentas favoritas
+            li Aproveite o suporte prioritário
+
+        .support-box
+          p Dúvidas sobre suas novas funcionalidades?
+          a(href="mailto:suporte@talenntloop.com") Entre em contato com nosso suporte
+
+      .footer
+        p Obrigado por escolher talenntloop!
+        
+        hr
+        
+        p © 2025 talenntloop. Todos os direitos reservados.
+        .footer-links
+          a(href="mailto:suporte@talenntloop.com") 📧 Suporte
+          span |
+          a(href="https://talenntloop.com") 🌐 Website

@@ -1,0 +1,94 @@
+doctype html
+html(lang="pt-BR")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    title Assinatura Cancelada - talenntloop
+    style
+      include ./styles/base.css
+      include ./styles/cancellation.css
+
+  body
+    .container
+      .header.header-danger
+        h1 ❌ Assinatura Cancelada
+        p #{companyName}
+
+      .content
+        p Olá 
+          strong #{contactName}
+          |,
+
+        p Confirmamos que sua assinatura do plano 
+          strong #{planName}
+          |  foi cancelada com sucesso.
+
+        .important-box
+          h3 📋 Informações Importantes
+          
+          .info-item
+            p.info-label ✅ Seu acesso continuará até:
+            p.info-value #{expirationDate}
+          
+          p.info-text Você terá acesso completo a todos os recursos do plano #{planName} até a data acima. Após essa data, sua conta será downgrade para o plano gratuito (se disponível).
+
+        .actions-box
+          h3 🔄 O que você pode fazer durante este período
+          ul.actions-list
+            li
+              strong 📥 Exportar dados:
+              |  Exporte todos os seus contatos, propriedades e dados importantes em formato CSV/Excel
+            
+            li
+              strong 📊 Relatórios finais:
+              |  Gere relatórios completos enquanto tem acesso aos dados
+            
+            li
+              strong 🔗 Integrações:
+              |  Desconecte integrações e resgate qualquer API key necessária
+            
+            li
+              strong 👥 Permissões:
+              |  Gerenciar acessos da equipe e fazer transição de responsabilidades
+            
+            li
+              strong 💾 Backup manual:
+              |  Crie backups manuais de informações críticas
+            
+            li
+              strong 🔄 Reativar a qualquer tempo:
+              |  Você pode reativar sua assinatura a qualquer momento sem perder dados
+
+        .warning-box
+          h4 ⚠️ Informações Importantes sobre Retenção de Dados
+          ul.warning-list
+            li
+              strong Acesso contínuo:
+              |  Você tem acesso completo até #{expirationDate}
+            
+            li
+              strong Após expiração:
+              |  Conta será movida para plano gratuito (se disponível) com funcionalidades limitadas
+            
+            li
+              strong Dados preservados:
+              |  Seus dados serão mantidos por 90 dias após cancelamento
+            
+            li
+              strong Reativação:
+              |  Ao reativar, seus dados estarão intactos e disponíveis imediatamente
+
+        .cta-button
+          a(href="https://talenntloop.com/dashboard/plans") 🔄 Reativar Assinatura
+
+      .footer
+        p Atenciosamente,
+        strong Equipe talenntloop
+        
+        hr
+        
+        p Este é um email automático relacionado ao cancelamento de sua assinatura.
+        .footer-links
+          a(href="mailto:suporte@talenntloop.com") 📧 Suporte
+          span |
+          a(href="https://talenntloop.com") 🌐 Website
