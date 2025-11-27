@@ -32,8 +32,10 @@ model Tenant {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  users        User[]
-  subscription Subscription?
+  users         User[]
+  subscription  Subscription?
+  jobs          Job[]
+  scraperQueues ScraperQueue[]
 
   @@index([deletedAt])
 }
@@ -59,7 +61,16 @@ model User {
   twoFactorSecret      String?
   twoFactorBackupCodes String[] @default([])
 
-  passwordResets PasswordReset[]
+  // Relations
+  passwordResets   PasswordReset[]
+  profile          Profile?
+  jobPreference    JobPreference?
+  applications     Application[]
+  jobMatches       JobMatch[]
+  savedJobs        SavedJob[]
+  notifications    Notification[]
+  coverLetterTemplates CoverLetterTemplate[]
+  recruiterContacts RecruiterContact[]
 
   @@unique([tenantId, email])
   @@index([tenantId, isActive])
@@ -97,6 +108,15 @@ model Plan {
   maxContacts        Int?
   hasAPI             Boolean @default(false)
   trialDurationHours Int?    @default(168) // 7 dias em horas
+
+  // TalentLoop Specific Limits
+  maxJobsPerDay      Int?     @default(50)   // Vagas capturadas por dia
+  maxApplicationsPerDay Int?  @default(10)   // Candidaturas por dia
+  maxAutoApplyPerDay Int?     @default(5)    // AutoApply por dia
+  hasAIMatching      Boolean  @default(false) // Motor de matching IA
+  hasAutoApply       Boolean  @default(false) // Automação de candidatura
+  hasRecruiterCRM    Boolean  @default(false) // CRM de recrutadores
+  hasPrioritySupport Boolean  @default(false)
 
   // Stripe integration
   stripeProductId String? @unique
@@ -220,4 +240,489 @@ model StripeCheckoutSession {
   @@index([stripeCustomerId])
   @@index([successToken])
   @@index([createdAt])
+}
+
+// ============================
+// Jobs (Vagas capturadas)
+// ============================
+model Job {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Origem
+  source      String   // linkedin, indeed, gupy, etc
+  externalId  String?  // ID da vaga na origem
+  url         String
+
+  // Informações da vaga
+  title       String
+  company     String?
+  companyLogo String?
+  companyUrl  String?
+  location    String?
+  modality    String?  // remoto, híbrido, presencial
+  seniority   String?  // junior, pleno, senior, lead
+  description String
+  requirements String? // Requisitos da vaga (texto)
+
+  // Salário
+  salaryMin   Int?
+  salaryMax   Int?
+  salaryCurrency String? @default("BRL")
+
+  // Recruiter/Contato
+  recruiterName  String?
+  recruiterEmail String?
+  recruiterLinkedin String?
+
+  // Classificação e busca
+  tags        String[] @default([])
+  skills      String[] @default([]) // Skills extraídas da descrição
+
+  // Status
+  isActive    Boolean  @default(true)
+  isFeatured  Boolean  @default(false) // Destaque
+  postedAt    DateTime?
+  expiresAt   DateTime? // Quando a vaga expira
+  scrapedAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  applications Application[]
+  jobMatches   JobMatch[]
+  savedJobs    SavedJob[]
+
+  @@index([tenantId, source])
+  @@index([tenantId, isActive])
+  @@index([title, company])
+  @@index([tags])
+  @@index([skills])
+  @@index([postedAt])
+  @@unique([tenantId, externalId]) // evita duplicação
+}
+
+// ============================
+// Profile (currículo do usuário)
+// ============================
+model Profile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Informações básicas
+  headline  String?  // ex: Senior Fullstack Engineer
+  summary   String?  // Sobre você
+  phone     String?
+  location  String?
+  website   String?
+
+  // Links profissionais
+  github    String?
+  linkedin  String?
+  portfolio String?
+
+  // Skills e competências
+  skills         String[] @default([])
+  languages      String[] @default([]) // Idiomas
+  certifications String[] @default([]) // Certificações
+
+  // CVs
+  cvUrl          String?  // PDF do CV principal
+  cvLastUpdated  DateTime?
+
+  // Status de busca
+  openToWork     Boolean @default(true)
+  availableFrom  DateTime? // Disponível a partir de
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  experiences Experience[]
+  educations  Education[]
+
+  @@index([userId])
+  @@index([openToWork])
+}
+
+// ============================
+// User Job Preferences (configurações de busca)
+// ============================
+model JobPreference {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Filtros de busca
+  keywords    String[] @default([]) // Palavras-chave para busca
+  locations   String[] @default([])
+  modalities  String[] @default([]) // remoto, híbrido, presencial
+  seniorities String[] @default([]) // junior, pleno, senior
+  tags        String[] @default([])
+  companies   String[] @default([]) // Empresas preferidas
+  excludeCompanies String[] @default([]) // Empresas a evitar
+
+  // Salário
+  salaryMin  Int?
+  salaryCurrency String? @default("BRL")
+
+  // AutoApply
+  autoApplyEnabled Boolean @default(false)
+  dailyLimit       Int?    @default(20)
+  autoApplyHours   String[] @default([]) // Horários permitidos para AutoApply
+
+  // Notificações
+  notifyNewJobs     Boolean @default(true)
+  notifyMatches     Boolean @default(true)
+  notifyApplications Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ============================
+// Application (candidaturas)
+// ============================
+model Application {
+  id        String   @id @default(uuid())
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Status
+  status     ApplicationStatus @default(PENDING)
+  appliedAt  DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Matching
+  matchScore  Int?     // 0-100
+  matchNotes  String?  // Notas do matching IA
+
+  // Documentos
+  coverLetter    String?  // Carta de apresentação usada
+  cvUsed         String?  // Link do CV adaptado
+  customAnswers  Json?    // Respostas customizadas para perguntas
+
+  // AutoApply
+  autoApplied Boolean @default(false)
+
+  // Follow-up
+  followUpAt    DateTime? // Data para follow-up
+  followUpDone  Boolean   @default(false)
+  notes         String?   // Notas do usuário
+
+  // Feedback
+  rejectionReason String? // Motivo da rejeição (se houver)
+  salary          Int?    // Salário oferecido (se for para entrevista/hired)
+
+  // Relations
+  logs ApplicationLog[]
+
+  @@unique([jobId, userId]) // Um usuário só pode se candidatar uma vez por vaga
+  @@index([userId, status])
+  @@index([jobId])
+  @@index([appliedAt])
+  @@index([status])
+}
+
+enum ApplicationStatus {
+  PENDING      // Aguardando envio
+  APPLIED      // Candidatura enviada
+  VIEWED       // Recrutador visualizou
+  INTERVIEW    // Chamado para entrevista
+  ASSESSMENT   // Em avaliação/teste técnico
+  OFFER        // Proposta recebida
+  REJECTED     // Rejeitado
+  HIRED        // Contratado
+  WITHDRAWN    // Candidatura retirada pelo usuário
+}
+
+// ============================
+// Application Logs (rastreamento do AutoApply)
+// ============================
+model ApplicationLog {
+  id            String   @id @default(uuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  step       String // "fill_form", "upload_cv", "error", "success"
+  message    String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([applicationId])
+}
+
+// ============================
+// AI Match Results (histórico de análise da vaga)
+// ============================
+model JobMatch {
+  id          String   @id @default(uuid())
+  jobId       String
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  score       Int       // 0–100
+  strengths   String[]  // Pontos fortes do candidato para a vaga
+  weaknesses  String[]  // Gaps/pontos a melhorar
+  suggestions String?   // Sugestões da IA
+  keywords    String[]  @default([]) // Keywords que fizeram match
+
+  // Detalhes do matching
+  skillsMatch     Int?  // % de match de skills
+  experienceMatch Int?  // % de match de experiência
+  locationMatch   Boolean? // Se localização é compatível
+
+  createdAt DateTime @default(now())
+
+  @@unique([jobId, userId]) // Um match por vaga/usuário
+  @@index([userId])
+  @@index([jobId])
+  @@index([score])
+}
+
+// ============================
+// Scraper Queue (fila de scraping)
+// ============================
+model ScraperQueue {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  source      String      // linkedin, indeed, etc
+  status      QueueStatus @default(PENDING)
+  searchQuery String?     // Query de busca usada
+  filters     Json?       // Filtros aplicados
+
+  // Resultados
+  jobsFound   Int?        // Quantas vagas foram encontradas
+  jobsAdded   Int?        // Quantas novas vagas foram adicionadas
+
+  // Erros
+  errorMessage String?
+  errorDetails Json?
+
+  createdAt   DateTime  @default(now())
+  processedAt DateTime?
+  completedAt DateTime?
+
+  @@index([tenantId, status])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum QueueStatus {
+  PENDING
+  PROCESSING
+  DONE
+  FAILED
+  CANCELED
+}
+
+// ============================
+// Experiência Profissional
+// ============================
+model Experience {
+  id        String   @id @default(uuid())
+  profileId String
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  title       String   // Cargo
+  company     String   // Empresa
+  companyLogo String?
+  location    String?
+  description String?
+  skills      String[] @default([]) // Skills usadas nessa experiência
+
+  startDate   DateTime
+  endDate     DateTime? // null = atual
+  isCurrent   Boolean   @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([profileId])
+  @@index([startDate])
+}
+
+// ============================
+// Educação
+// ============================
+model Education {
+  id        String   @id @default(uuid())
+  profileId String
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  institution String   // Instituição
+  degree      String   // Graduação, Pós, MBA, etc
+  field       String?  // Área de estudo
+  description String?
+
+  startDate   DateTime?
+  endDate     DateTime?
+  isCurrent   Boolean   @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([profileId])
+}
+
+// ============================
+// Vagas Salvas/Favoritas
+// ============================
+model SavedJob {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId  String
+  job    Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  notes     String?  // Notas do usuário sobre a vaga
+  savedAt   DateTime @default(now())
+
+  @@unique([userId, jobId])
+  @@index([userId])
+  @@index([savedAt])
+}
+
+// ============================
+// Notificações do Usuário
+// ============================
+model Notification {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      NotificationType
+  title     String
+  message   String
+  data      Json?    // Dados adicionais (jobId, applicationId, etc)
+  link      String?  // Link para ação
+
+  read      Boolean  @default(false)
+  readAt    DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+  @@index([createdAt])
+}
+
+enum NotificationType {
+  NEW_JOB           // Nova vaga que faz match
+  APPLICATION_UPDATE // Atualização de candidatura
+  INTERVIEW_REMINDER // Lembrete de entrevista
+  FOLLOW_UP         // Lembrete de follow-up
+  MATCH_FOUND       // Match de alta pontuação encontrado
+  AUTO_APPLY_STATUS // Status do AutoApply
+  SYSTEM            // Notificação do sistema
+}
+
+// ============================
+// Templates de Carta de Apresentação
+// ============================
+model CoverLetterTemplate {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name     String   // Nome do template
+  content  String   // Conteúdo do template (com placeholders)
+  isDefault Boolean @default(false)
+
+  // Placeholders suportados: {{company}}, {{position}}, {{skills}}, etc.
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ============================
+// CRM de Recrutadores
+// ============================
+model RecruiterContact {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name       String
+  email      String?
+  phone      String?
+  linkedin   String?
+  company    String?
+  position   String?  // Cargo do recrutador
+  notes      String?
+
+  // Histórico de interações
+  lastContactAt DateTime?
+  nextFollowUp  DateTime?
+
+  // Tags para organização
+  tags String[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  messages RecruiterMessage[]
+
+  @@index([userId])
+  @@index([company])
+  @@index([lastContactAt])
+}
+
+// ============================
+// Mensagens para Recrutadores
+// ============================
+model RecruiterMessage {
+  id          String @id @default(uuid())
+  contactId   String
+  contact     RecruiterContact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  type        MessageType // EMAIL, LINKEDIN, WHATSAPP
+  subject     String?
+  content     String
+  
+  // Status
+  status      MessageStatus @default(DRAFT)
+  sentAt      DateTime?
+  openedAt    DateTime?
+  repliedAt   DateTime?
+
+  // Relacionamento com vaga (opcional)
+  jobId       String?
+  jobTitle    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([contactId])
+  @@index([status])
+  @@index([sentAt])
+}
+
+enum MessageType {
+  EMAIL
+  LINKEDIN
+  WHATSAPP
+  OTHER
+}
+
+enum MessageStatus {
+  DRAFT
+  SCHEDULED
+  SENT
+  OPENED
+  REPLIED
+  FAILED
 }
