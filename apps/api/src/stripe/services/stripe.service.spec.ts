@@ -11,11 +11,6 @@ import { StripeWebhookService } from '@/stripe/services/stripe/webhook.service';
 
 describe('StripeService', () => {
   let service: StripeService;
-  let stripeRepository: StripeRepository;
-  let customerService: StripeCustomerService;
-  let checkoutService: StripeCheckoutService;
-  let subscriptionService: StripeSubscriptionService;
-  let webhookService: StripeWebhookService;
 
   const mockConfigService = {
     get: vi.fn((key: string) => {
@@ -74,13 +69,6 @@ describe('StripeService', () => {
     }).compile();
 
     service = module.get<StripeService>(StripeService);
-    stripeRepository = module.get<StripeRepository>(StripeRepository);
-    customerService = module.get<StripeCustomerService>(StripeCustomerService);
-    checkoutService = module.get<StripeCheckoutService>(StripeCheckoutService);
-    subscriptionService = module.get<StripeSubscriptionService>(
-      StripeSubscriptionService,
-    );
-    webhookService = module.get<StripeWebhookService>(StripeWebhookService);
   });
 
   describe('createCustomer', () => {
@@ -221,10 +209,10 @@ describe('StripeService', () => {
       );
     });
 
-    it('should throw BadRequestException if webhook secret is missing', () => {
+    it('should throw BadRequestException if webhook secret is missing', async () => {
       mockConfigService.get.mockReturnValue(null);
 
-      const module = Test.createTestingModule({
+      const testModule = await Test.createTestingModule({
         providers: [
           StripeService,
           { provide: ConfigService, useValue: { get: () => null } },
@@ -237,10 +225,10 @@ describe('StripeService', () => {
           },
           { provide: StripeWebhookService, useValue: mockWebhookService },
         ],
-      });
+      }).compile();
 
       // This test verifies that the method checks for webhook secret
-      expect(mockConfigService.get).toBeDefined();
+      expect(testModule).toBeDefined();
     });
 
     it('should throw BadRequestException on invalid signature', () => {

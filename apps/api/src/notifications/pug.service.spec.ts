@@ -2,19 +2,18 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PugService } from './pug.service';
 import { TemplateRenderService } from './services/template-render.service';
-import { TemplateRepository } from './repositories/template.repository';
 
 describe('PugService', () => {
   let service: PugService;
 
   const mockTemplateRenderService = {
-    renderWelcome: vi.fn().mockResolvedValue('<html>Welcome Test</html>'),
-    renderPasswordReset: vi.fn().mockResolvedValue('<html>Reset</html>'),
-    renderLimitAlert: vi.fn().mockResolvedValue('<html>Alert</html>'),
-    renderCancellation: vi.fn().mockResolvedValue('<html>Cancellation</html>'),
-    renderUpgrade: vi.fn().mockResolvedValue('<html>Upgrade</html>'),
-    render2FAEnabled: vi.fn().mockResolvedValue('<html>2FA Enabled</html>'),
-    render2FADisabled: vi.fn().mockResolvedValue('<html>2FA Disabled</html>'),
+    renderWelcome: vi.fn().mockReturnValue('<html>Welcome Test</html>'),
+    renderPasswordReset: vi.fn().mockReturnValue('<html>Reset</html>'),
+    renderLimitAlert: vi.fn().mockReturnValue('<html>Alert</html>'),
+    renderCancellation: vi.fn().mockReturnValue('<html>Cancellation</html>'),
+    renderUpgrade: vi.fn().mockReturnValue('<html>Upgrade</html>'),
+    render2FAEnabled: vi.fn().mockReturnValue('<html>2FA Enabled</html>'),
+    render2FADisabled: vi.fn().mockReturnValue('<html>2FA Disabled</html>'),
   };
 
   beforeEach(async () => {
@@ -35,8 +34,8 @@ describe('PugService', () => {
   });
 
   describe('Template Rendering', () => {
-    it('should render welcome template', async () => {
-      const html = await service.renderWelcome({
+    it('should render welcome template', () => {
+      const html = service.renderWelcome({
         userName: 'João Silva',
         email: 'joao@example.com',
         password: 'SecurePass123!',
@@ -48,8 +47,8 @@ describe('PugService', () => {
       expect(mockTemplateRenderService.renderWelcome).toHaveBeenCalled();
     });
 
-    it('should render password reset template', async () => {
-      const html = await service.renderPasswordReset({
+    it('should render password reset template', () => {
+      const html = service.renderPasswordReset({
         userName: 'Maria Santos',
         resetLink: 'https://sass-multitenant.com/reset?token=abc123',
         expiryMinutes: 60,
@@ -59,8 +58,8 @@ describe('PugService', () => {
       expect(mockTemplateRenderService.renderPasswordReset).toHaveBeenCalled();
     });
 
-    it('should render limit alert template', async () => {
-      const html = await service.renderLimitAlert({
+    it('should render limit alert template', () => {
+      const html = service.renderLimitAlert({
         userName: 'Pedro Costa',
         currentUsage: 450,
         limit: 500,
@@ -72,8 +71,8 @@ describe('PugService', () => {
       expect(mockTemplateRenderService.renderLimitAlert).toHaveBeenCalled();
     });
 
-    it('should render cancellation template', async () => {
-      const html = await service.renderCancellation({
+    it('should render cancellation template', () => {
+      const html = service.renderCancellation({
         userName: 'Ana Silva',
         planName: 'Professional',
         cancellationDate: '2025-02-01',
@@ -84,8 +83,8 @@ describe('PugService', () => {
       expect(mockTemplateRenderService.renderCancellation).toHaveBeenCalled();
     });
 
-    it('should render upgrade template', async () => {
-      const html = await service.renderUpgrade({
+    it('should render upgrade template', () => {
+      const html = service.renderUpgrade({
         userName: 'Carlos Mendes',
         oldPlan: 'Basic',
         newPlan: 'Professional',

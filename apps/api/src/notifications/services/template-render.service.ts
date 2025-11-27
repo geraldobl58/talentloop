@@ -40,7 +40,7 @@ export class TemplateRenderService implements OnModuleInit {
     try {
       const compiled =
         this.templateRepository.getCompiledTemplate(templateName);
-      return compiled(data) as string;
+      return compiled(data);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to render template ${templateName}: ${message}`);

@@ -29,22 +29,22 @@ export class StripeWebhookService {
     }
   }
 
-  private async handleSubscriptionUpdated(subscription: any) {
+  private handleSubscriptionUpdated(subscription: any): void {
     this.logger.log(`Subscription updated: ${subscription.id}`);
     // Implementar lógica de atualização
   }
 
-  private async handleSubscriptionDeleted(subscription: any) {
+  private handleSubscriptionDeleted(subscription: any): void {
     this.logger.log(`Subscription deleted: ${subscription.id}`);
     // Implementar lógica de cancelamento
   }
 
-  private async handlePaymentSucceeded(invoice: any) {
+  private handlePaymentSucceeded(invoice: any): void {
     this.logger.log(`Payment succeeded for invoice: ${invoice.id}`);
     // Implementar lógica de pagamento bem-sucedido
   }
 
-  private async handlePaymentFailed(invoice: any) {
+  private handlePaymentFailed(invoice: any): void {
     this.logger.log(`Payment failed for invoice: ${invoice.id}`);
     // Implementar lógica de falha de pagamento
   }

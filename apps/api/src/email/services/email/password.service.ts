@@ -30,7 +30,7 @@ export class PasswordEmailService {
     expiryMinutes: number;
   }): Promise<void> {
     try {
-      const html = await this.templateRenderService.renderPasswordReset({
+      const html = this.templateRenderService.renderPasswordReset({
         userName: options.userName,
         resetLink: options.resetLink,
         expiryMinutes: options.expiryMinutes,

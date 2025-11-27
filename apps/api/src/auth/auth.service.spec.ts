@@ -8,9 +8,6 @@ import { ProfileService } from './services/profile.service';
 
 describe('AuthService', () => {
   let service: AuthService;
-  let signInService: SignInService;
-  let passwordService: PasswordService;
-  let profileService: ProfileService;
 
   const mockSignInService = {
     execute: vi.fn(),
@@ -42,9 +39,6 @@ describe('AuthService', () => {
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    signInService = module.get<SignInService>(SignInService);
-    passwordService = module.get<PasswordService>(PasswordService);
-    profileService = module.get<ProfileService>(ProfileService);
   });
 
   describe('signIn', () => {

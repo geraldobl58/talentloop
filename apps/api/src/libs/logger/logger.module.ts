@@ -37,14 +37,14 @@ import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
               }),
             },
             autoLogging: {
-              ignore: (req: any) => {
+              ignore: (req: { url?: string }) => {
                 // Ignore health check and static assets
-                return (
+                return Boolean(
                   req.url?.includes('/health') ||
-                  req.url?.includes('/docs') ||
-                  req.url?.includes('.css') ||
-                  req.url?.includes('.js') ||
-                  req.url?.includes('.ico')
+                    req.url?.includes('/docs') ||
+                    req.url?.includes('.css') ||
+                    req.url?.includes('.js') ||
+                    req.url?.includes('.ico'),
                 );
               },
             },

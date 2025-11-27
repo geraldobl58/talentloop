@@ -1,5 +1,14 @@
 import { vi } from 'vitest';
 
+// Enum RoleType para os testes
+const RoleType = {
+  OWNER: 'OWNER',
+  ADMIN: 'ADMIN',
+  MANAGER: 'MANAGER',
+  MEMBER: 'MEMBER',
+  VIEWER: 'VIEWER',
+} as const;
+
 // Mock do Prisma
 vi.mock('@prisma/client', () => ({
   PrismaClient: vi.fn().mockImplementation(() => ({
@@ -30,7 +39,37 @@ vi.mock('@prisma/client', () => ({
       findFirst: vi.fn(),
       findMany: vi.fn(),
     },
+    role: {
+      findUnique: vi.fn(),
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+    },
+    permission: {
+      findUnique: vi.fn(),
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+    },
+    userRole: {
+      findUnique: vi.fn(),
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+      upsert: vi.fn(),
+      delete: vi.fn(),
+      deleteMany: vi.fn(),
+      count: vi.fn(),
+    },
+    rolePermission: {
+      findMany: vi.fn(),
+      create: vi.fn(),
+      createMany: vi.fn(),
+      delete: vi.fn(),
+      deleteMany: vi.fn(),
+    },
   })),
+  RoleType,
 }));
 
 // Mock do ConfigService

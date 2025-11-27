@@ -8,7 +8,7 @@ import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 // Mock @prisma/client to provide the enums
 vi.mock('@prisma/client', async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = (await importOriginal()) as Record<string, unknown>;
   return {
     ...actual,
     SubStatus: {

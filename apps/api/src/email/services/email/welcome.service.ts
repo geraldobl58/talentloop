@@ -33,7 +33,7 @@ export class WelcomeEmailService {
     loginUrl: string;
   }): Promise<void> {
     try {
-      const html = await this.templateRenderService.renderWelcome({
+      const html = this.templateRenderService.renderWelcome({
         userName: options.userName,
         email: options.email,
         password: options.password,
@@ -66,13 +66,10 @@ export class WelcomeEmailService {
     confirmationUrl: string;
   }): Promise<void> {
     try {
-      const html = await this.templateRenderService.render(
-        'email-confirmation',
-        {
-          firstName: options.firstName,
-          confirmationUrl: options.confirmationUrl,
-        },
-      );
+      const html = this.templateRenderService.render('email-confirmation', {
+        firstName: options.firstName,
+        confirmationUrl: options.confirmationUrl,
+      });
 
       await this.emailRepository.send({
         to: options.to,

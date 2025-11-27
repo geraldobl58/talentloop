@@ -34,7 +34,7 @@ export class SubscriptionEmailService {
     dashboardUrl: string;
   }): Promise<void> {
     try {
-      const html = await this.templateRenderService.renderUpgrade({
+      const html = this.templateRenderService.renderUpgrade({
         userName: options.userName,
         oldPlan: options.oldPlan,
         newPlan: options.newPlan,
@@ -70,7 +70,7 @@ export class SubscriptionEmailService {
     dataExportUrl: string;
   }): Promise<void> {
     try {
-      const html = await this.templateRenderService.renderCancellation({
+      const html = this.templateRenderService.renderCancellation({
         userName: options.userName,
         planName: options.planName,
         cancellationDate: options.cancellationDate,

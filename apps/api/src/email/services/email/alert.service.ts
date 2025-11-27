@@ -33,7 +33,7 @@ export class AlertEmailService {
     upgradeUrl: string;
   }): Promise<void> {
     try {
-      const html = await this.templateRenderService.renderLimitAlert({
+      const html = this.templateRenderService.renderLimitAlert({
         userName: options.userName,
         currentUsage: options.currentUsage,
         limit: options.limit,
@@ -67,7 +67,7 @@ export class AlertEmailService {
     supportUrl: string;
   }): Promise<void> {
     try {
-      const html = await this.templateRenderService.render2FAEnabled({
+      const html = this.templateRenderService.render2FAEnabled({
         userName: options.userName,
         backupCodesCount: options.backupCodesCount,
         supportUrl: options.supportUrl,
@@ -98,7 +98,7 @@ export class AlertEmailService {
     disabledAt: string;
   }): Promise<void> {
     try {
-      const html = await this.templateRenderService.render2FADisabled({
+      const html = this.templateRenderService.render2FADisabled({
         userName: options.userName,
         disabledAt: options.disabledAt,
       });

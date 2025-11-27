@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, RoleType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -29,6 +29,12 @@ async function main() {
   await prisma.passwordReset.deleteMany();
   console.log('Cleared existing password resets');
 
+  await prisma.userRole.deleteMany();
+  console.log('Cleared existing user roles');
+
+  await prisma.rolePermission.deleteMany();
+  console.log('Cleared existing role permissions');
+
   await prisma.user.deleteMany();
   console.log('Cleared existing users');
 
@@ -44,6 +50,280 @@ async function main() {
   await prisma.plan.deleteMany();
   console.log('Cleared existing plans');
 
+  await prisma.permission.deleteMany();
+  console.log('Cleared existing permissions');
+
+  await prisma.role.deleteMany();
+  console.log('Cleared existing roles');
+
+  // ============================
+  // Create Roles
+  // ============================
+  const ownerRole = await prisma.role.create({
+    data: {
+      name: RoleType.OWNER,
+      description: 'Proprietário do tenant - acesso total',
+      isSystem: true,
+    },
+  });
+  console.log('✅ Created OWNER role:', ownerRole.id);
+
+  const adminRole = await prisma.role.create({
+    data: {
+      name: RoleType.ADMIN,
+      description: 'Administrador - gerencia usuários e configurações',
+      isSystem: true,
+    },
+  });
+  console.log('✅ Created ADMIN role:', adminRole.id);
+
+  const managerRole = await prisma.role.create({
+    data: {
+      name: RoleType.MANAGER,
+      description: 'Gerente - acesso a relatórios e configurações limitadas',
+      isSystem: true,
+    },
+  });
+  console.log('✅ Created MANAGER role:', managerRole.id);
+
+  const memberRole = await prisma.role.create({
+    data: {
+      name: RoleType.MEMBER,
+      description: 'Membro - acesso básico às funcionalidades',
+      isSystem: true,
+    },
+  });
+  console.log('✅ Created MEMBER role:', memberRole.id);
+
+  const viewerRole = await prisma.role.create({
+    data: {
+      name: RoleType.VIEWER,
+      description: 'Visualizador - apenas leitura',
+      isSystem: true,
+    },
+  });
+  console.log('✅ Created VIEWER role:', viewerRole.id);
+
+  // ============================
+  // Create Permissions
+  // ============================
+  const permissionsData = [
+    // Jobs
+    {
+      name: 'jobs:read',
+      module: 'jobs',
+      action: 'read',
+      description: 'Visualizar vagas',
+    },
+    {
+      name: 'jobs:write',
+      module: 'jobs',
+      action: 'write',
+      description: 'Criar e editar vagas',
+    },
+    {
+      name: 'jobs:delete',
+      module: 'jobs',
+      action: 'delete',
+      description: 'Excluir vagas',
+    },
+    // Applications
+    {
+      name: 'applications:read',
+      module: 'applications',
+      action: 'read',
+      description: 'Visualizar candidaturas',
+    },
+    {
+      name: 'applications:write',
+      module: 'applications',
+      action: 'write',
+      description: 'Criar e editar candidaturas',
+    },
+    {
+      name: 'applications:delete',
+      module: 'applications',
+      action: 'delete',
+      description: 'Excluir candidaturas',
+    },
+    // Profile
+    {
+      name: 'profile:read',
+      module: 'profile',
+      action: 'read',
+      description: 'Visualizar perfil',
+    },
+    {
+      name: 'profile:write',
+      module: 'profile',
+      action: 'write',
+      description: 'Editar perfil',
+    },
+    // Users (team management)
+    {
+      name: 'users:read',
+      module: 'users',
+      action: 'read',
+      description: 'Visualizar usuários do time',
+    },
+    {
+      name: 'users:write',
+      module: 'users',
+      action: 'write',
+      description: 'Criar e editar usuários',
+    },
+    {
+      name: 'users:delete',
+      module: 'users',
+      action: 'delete',
+      description: 'Remover usuários',
+    },
+    {
+      name: 'users:manage',
+      module: 'users',
+      action: 'manage',
+      description: 'Gerenciar roles de usuários',
+    },
+    // Settings
+    {
+      name: 'settings:read',
+      module: 'settings',
+      action: 'read',
+      description: 'Visualizar configurações',
+    },
+    {
+      name: 'settings:write',
+      module: 'settings',
+      action: 'write',
+      description: 'Editar configurações',
+    },
+    // Subscription/Billing
+    {
+      name: 'billing:read',
+      module: 'billing',
+      action: 'read',
+      description: 'Visualizar faturamento',
+    },
+    {
+      name: 'billing:manage',
+      module: 'billing',
+      action: 'manage',
+      description: 'Gerenciar assinatura',
+    },
+    // AutoApply
+    {
+      name: 'autoapply:read',
+      module: 'autoapply',
+      action: 'read',
+      description: 'Visualizar AutoApply',
+    },
+    {
+      name: 'autoapply:write',
+      module: 'autoapply',
+      action: 'write',
+      description: 'Configurar AutoApply',
+    },
+    // Recruiter CRM
+    {
+      name: 'recruiter:read',
+      module: 'recruiter',
+      action: 'read',
+      description: 'Visualizar contatos de recrutadores',
+    },
+    {
+      name: 'recruiter:write',
+      module: 'recruiter',
+      action: 'write',
+      description: 'Gerenciar contatos de recrutadores',
+    },
+    // Reports
+    {
+      name: 'reports:read',
+      module: 'reports',
+      action: 'read',
+      description: 'Visualizar relatórios',
+    },
+    {
+      name: 'reports:export',
+      module: 'reports',
+      action: 'export',
+      description: 'Exportar relatórios',
+    },
+  ];
+
+  const permissions = await Promise.all(
+    permissionsData.map((p) => prisma.permission.create({ data: p })),
+  );
+  console.log(`✅ Created ${permissions.length} permissions`);
+
+  // ============================
+  // Assign Permissions to Roles
+  // ============================
+  const allPermissionIds = permissions.map((p) => p.id);
+
+  // OWNER - todas as permissões
+  await prisma.rolePermission.createMany({
+    data: allPermissionIds.map((permissionId) => ({
+      roleId: ownerRole.id,
+      permissionId,
+    })),
+  });
+  console.log('✅ Assigned all permissions to OWNER');
+
+  // ADMIN - todas exceto billing:manage
+  const adminPermissions = permissions.filter(
+    (p) => p.name !== 'billing:manage',
+  );
+  await prisma.rolePermission.createMany({
+    data: adminPermissions.map((p) => ({
+      roleId: adminRole.id,
+      permissionId: p.id,
+    })),
+  });
+  console.log('✅ Assigned permissions to ADMIN');
+
+  // MANAGER - read + reports + some write
+  const managerPermissions = permissions.filter(
+    (p) =>
+      p.action === 'read' ||
+      p.name.startsWith('reports:') ||
+      ['applications:write', 'autoapply:write', 'recruiter:write'].includes(
+        p.name,
+      ),
+  );
+  await prisma.rolePermission.createMany({
+    data: managerPermissions.map((p) => ({
+      roleId: managerRole.id,
+      permissionId: p.id,
+    })),
+  });
+  console.log('✅ Assigned permissions to MANAGER');
+
+  // MEMBER - básico (jobs, applications, profile, autoapply, recruiter)
+  const memberPermissions = permissions.filter(
+    (p) =>
+      ['jobs', 'applications', 'profile', 'autoapply', 'recruiter'].includes(
+        p.module,
+      ) && ['read', 'write'].includes(p.action),
+  );
+  await prisma.rolePermission.createMany({
+    data: memberPermissions.map((p) => ({
+      roleId: memberRole.id,
+      permissionId: p.id,
+    })),
+  });
+  console.log('✅ Assigned permissions to MEMBER');
+
+  // VIEWER - apenas leitura
+  const viewerPermissions = permissions.filter((p) => p.action === 'read');
+  await prisma.rolePermission.createMany({
+    data: viewerPermissions.map((p) => ({
+      roleId: viewerRole.id,
+      permissionId: p.id,
+    })),
+  });
+  console.log('✅ Assigned permissions to VIEWER');
+
   // ============================
   // Create Plans
   // ============================
@@ -53,10 +333,17 @@ async function main() {
       price: 0,
       currency: 'BRL',
       description: 'Experimente grátis por 7 dias',
-      maxUsers: 4,
+      maxUsers: 1,
       maxContacts: 10,
       hasAPI: false,
       trialDurationHours: 168, // 7 dias
+      maxJobsPerDay: 20,
+      maxApplicationsPerDay: 5,
+      maxAutoApplyPerDay: 0,
+      hasAIMatching: false,
+      hasAutoApply: false,
+      hasRecruiterCRM: false,
+      hasPrioritySupport: false,
       stripeProductId: null,
       stripePriceId: null,
     },
@@ -66,12 +353,19 @@ async function main() {
   const starterPlan = await prisma.plan.create({
     data: {
       name: 'STARTER',
-      price: 149.99,
+      price: 49.99,
       currency: 'BRL',
-      description: 'Perfeito para começar',
-      maxUsers: 4,
-      maxContacts: 10,
+      description: 'Perfeito para começar sua busca',
+      maxUsers: 1,
+      maxContacts: 50,
       hasAPI: false,
+      maxJobsPerDay: 50,
+      maxApplicationsPerDay: 20,
+      maxAutoApplyPerDay: 5,
+      hasAIMatching: true,
+      hasAutoApply: false,
+      hasRecruiterCRM: false,
+      hasPrioritySupport: false,
       stripeProductId: 'prod_TClbVFQhJS1ZOD',
       stripePriceId: 'price_1SGM3uAB7ykXDk2oUJravQQK',
     },
@@ -81,12 +375,19 @@ async function main() {
   const professionalPlan = await prisma.plan.create({
     data: {
       name: 'PROFESSIONAL',
-      price: 299.99,
+      price: 99.99,
       currency: 'BRL',
-      description: 'Para empresas em crescimento',
-      maxUsers: 4,
-      maxContacts: 20,
+      description: 'Para quem quer acelerar a carreira',
+      maxUsers: 1,
+      maxContacts: 200,
       hasAPI: true,
+      maxJobsPerDay: 100,
+      maxApplicationsPerDay: 50,
+      maxAutoApplyPerDay: 20,
+      hasAIMatching: true,
+      hasAutoApply: true,
+      hasRecruiterCRM: true,
+      hasPrioritySupport: false,
       stripeProductId: 'prod_TClbELPL9wiScE',
       stripePriceId: 'price_1SGM4CAB7ykXDk2ow5PfFVyb',
     },
@@ -96,12 +397,19 @@ async function main() {
   const enterprisePlan = await prisma.plan.create({
     data: {
       name: 'ENTERPRISE',
-      price: 599.99,
+      price: 199.99,
       currency: 'BRL',
-      description: 'Solução completa',
-      maxUsers: 4,
-      maxContacts: 30,
+      description: 'Recursos ilimitados + suporte prioritário',
+      maxUsers: 5,
+      maxContacts: null, // ilimitado
       hasAPI: true,
+      maxJobsPerDay: null, // ilimitado
+      maxApplicationsPerDay: null, // ilimitado
+      maxAutoApplyPerDay: 100,
+      hasAIMatching: true,
+      hasAutoApply: true,
+      hasRecruiterCRM: true,
+      hasPrioritySupport: true,
       stripeProductId: 'prod_TClb1eMmA798TY',
       stripePriceId: 'price_1SGM4TAB7ykXDk2ozLp2ZBgF',
     },
@@ -134,6 +442,16 @@ async function main() {
   });
   console.log('✅ Created User 1 (João):', user1.id);
 
+  // Assign OWNER role to João
+  await prisma.userRole.create({
+    data: {
+      userId: user1.id,
+      roleId: ownerRole.id,
+      tenantId: tenant1.id,
+      assignedBy: 'system',
+    },
+  });
+
   const user2 = await prisma.user.create({
     data: {
       tenantId: tenant1.id,
@@ -148,6 +466,16 @@ async function main() {
     },
   });
   console.log('✅ Created User 2 (Maria with 2FA):', user2.id);
+
+  // Assign ADMIN role to Maria
+  await prisma.userRole.create({
+    data: {
+      userId: user2.id,
+      roleId: adminRole.id,
+      tenantId: tenant1.id,
+      assignedBy: user1.id,
+    },
+  });
 
   const subscription1 = await prisma.subscription.create({
     data: {
@@ -183,6 +511,16 @@ async function main() {
     },
   });
   console.log('✅ Created User 3 (Carlos):', user3.id);
+
+  // Assign OWNER role to Carlos
+  await prisma.userRole.create({
+    data: {
+      userId: user3.id,
+      roleId: ownerRole.id,
+      tenantId: tenant2.id,
+      assignedBy: 'system',
+    },
+  });
 
   const subscription2 = await prisma.subscription.create({
     data: {
@@ -221,6 +559,16 @@ async function main() {
   });
   console.log('✅ Created User 4 (Ana with 2FA):', user4.id);
 
+  // Assign OWNER role to Ana
+  await prisma.userRole.create({
+    data: {
+      userId: user4.id,
+      roleId: ownerRole.id,
+      tenantId: tenant3.id,
+      assignedBy: 'system',
+    },
+  });
+
   const user5 = await prisma.user.create({
     data: {
       tenantId: tenant3.id,
@@ -233,6 +581,16 @@ async function main() {
     },
   });
   console.log('✅ Created User 5 (Roberto - Inactive):', user5.id);
+
+  // Assign MEMBER role to Roberto
+  await prisma.userRole.create({
+    data: {
+      userId: user5.id,
+      roleId: memberRole.id,
+      tenantId: tenant3.id,
+      assignedBy: user4.id,
+    },
+  });
 
   const subscription3 = await prisma.subscription.create({
     data: {
@@ -268,6 +626,16 @@ async function main() {
     },
   });
   console.log('✅ Created User 6 (Pedro):', user6.id);
+
+  // Assign OWNER role to Pedro
+  await prisma.userRole.create({
+    data: {
+      userId: user6.id,
+      roleId: ownerRole.id,
+      tenantId: tenant4.id,
+      assignedBy: 'system',
+    },
+  });
 
   const subscription4 = await prisma.subscription.create({
     data: {
@@ -306,6 +674,16 @@ async function main() {
     },
   });
   console.log('✅ Created User 7 (Lucas):', user7.id);
+
+  // Assign OWNER role to Lucas
+  await prisma.userRole.create({
+    data: {
+      userId: user7.id,
+      roleId: ownerRole.id,
+      tenantId: tenant5.id,
+      assignedBy: 'system',
+    },
+  });
 
   const subscription5 = await prisma.subscription.create({
     data: {

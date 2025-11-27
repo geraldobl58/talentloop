@@ -94,8 +94,7 @@ export class LimitMonitorService {
     maxLimit: number;
     percentageUsed: number;
   }) {
-    const { tenant, plan, limitType, currentUsage, maxLimit, percentageUsed } =
-      data;
+    const { tenant, limitType, currentUsage, maxLimit, percentageUsed } = data;
 
     // Buscar admin/manager do tenant
     const admin = tenant.users?.[0];

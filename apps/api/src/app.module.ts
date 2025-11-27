@@ -10,6 +10,7 @@ import { PlansModule } from './plans/plans.module';
 import { StripeModule } from './stripe/stripe.module';
 import { LoggerModule } from './libs/logger/logger.module';
 import { EmailModule } from './email/email.module';
+import { RolesModule } from './roles/roles.module';
 import { APP_CONSTANTS } from './libs/common/constants';
 
 @Module({
@@ -28,6 +29,7 @@ import { APP_CONSTANTS } from './libs/common/constants';
     PlansModule,
     StripeModule,
     EmailModule,
+    RolesModule,
   ],
   controllers: [],
   providers: [

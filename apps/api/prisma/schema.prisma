@@ -22,6 +22,74 @@ enum SubStatus {
 }
 
 // ============================
+// Roles & Permissions (RBAC)
+// ============================
+enum RoleType {
+  OWNER    // Dono do tenant - acesso total
+  ADMIN    // Administrador - gerencia usuários e configurações
+  MANAGER  // Gerente - acesso a relatórios e configurações limitadas
+  MEMBER   // Membro - acesso básico às funcionalidades
+  VIEWER   // Visualizador - apenas leitura
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        RoleType @unique
+  description String?
+  isSystem    Boolean  @default(true) // Roles do sistema não podem ser deletadas
+
+  // Relations
+  permissions RolePermission[]
+  userRoles   UserRole[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Permission {
+  id          String  @id @default(uuid())
+  name        String  @unique // Ex: "jobs:read", "jobs:write", "users:manage"
+  description String?
+  module      String  // Ex: "jobs", "users", "applications", "settings"
+  action      String  // Ex: "read", "write", "delete", "manage"
+
+  // Relations
+  rolePermissions RolePermission[]
+
+  createdAt DateTime @default(now())
+}
+
+model RolePermission {
+  id           String @id @default(uuid())
+  roleId       String
+  role         Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+model UserRole {
+  id       String @id @default(uuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId   String
+  role     Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  tenantId String // Escopo do role por tenant
+
+  assignedBy String?   // ID do usuário que atribuiu o role
+  assignedAt DateTime  @default(now())
+  expiresAt  DateTime? // Role temporário (opcional)
+
+  @@unique([userId, roleId, tenantId]) // Um usuário pode ter um role por tenant
+  @@index([userId])
+  @@index([roleId])
+  @@index([tenantId])
+}
+
+// ============================
 // Tenant
 // ============================
 model Tenant {
@@ -63,6 +131,7 @@ model User {
 
   // Relations
   passwordResets   PasswordReset[]
+  userRoles        UserRole[]
   profile          Profile?
   jobPreference    JobPreference?
   applications     Application[]

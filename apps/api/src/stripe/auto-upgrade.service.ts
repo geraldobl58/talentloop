@@ -158,12 +158,12 @@ export class AutoUpgradeService {
   /**
    * Registra o upgrade no histórico
    */
-  private async logUpgrade(
+  private logUpgrade(
     tenantId: string,
     oldPlanName: string,
     newPlanName: string,
     stripeSubscriptionId: string,
-  ): Promise<void> {
+  ): void {
     try {
       // Você pode criar uma tabela de histórico de upgrades se desejar
       // Por enquanto, vamos apenas logar
@@ -198,7 +198,7 @@ export class AutoUpgradeService {
     tenantId: string,
     oldPlanName: string,
     newPlanName: string,
-    expiresAt: Date,
+    _expiresAt: Date,
   ): Promise<void> {
     try {
       // Buscar informações do tenant e admin
@@ -221,7 +221,8 @@ export class AutoUpgradeService {
         );
         return;
       }
-      const planFeatures = this.getPlanFeatures(newPlanName);
+      // Note: planFeatures can be used later when email sending is implemented
+      // const planFeatures = this.getPlanFeatures(newPlanName);
 
       // TODO: Send upgrade email via email service
       // await this.emailService.sendWelcome({ ... });

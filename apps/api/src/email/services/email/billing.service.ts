@@ -35,7 +35,7 @@ export class BillingEmailService {
     receiptUrl: string;
   }): Promise<void> {
     try {
-      const html = await this.templateRenderService.render('payment-receipt', {
+      const html = this.templateRenderService.render('payment-receipt', {
         userName: options.userName,
         amount: options.amount.toFixed(2),
         currency: options.currency,
@@ -72,7 +72,7 @@ export class BillingEmailService {
     invoiceUrl: string;
   }): Promise<void> {
     try {
-      const html = await this.templateRenderService.render('invoice-notice', {
+      const html = this.templateRenderService.render('invoice-notice', {
         userName: options.userName,
         invoiceNumber: options.invoiceNumber,
         amount: options.amount.toFixed(2),
@@ -107,7 +107,7 @@ export class BillingEmailService {
     amount: number;
   }): Promise<void> {
     try {
-      const html = await this.templateRenderService.render('renewal-reminder', {
+      const html = this.templateRenderService.render('renewal-reminder', {
         userName: options.userName,
         plan: options.plan,
         renewalDate: options.renewalDate.toLocaleDateString('pt-BR'),
@@ -141,7 +141,7 @@ export class BillingEmailService {
     refundDate: Date;
   }): Promise<void> {
     try {
-      const html = await this.templateRenderService.render(
+      const html = this.templateRenderService.render(
         'refund-confirmation',
         {
           userName: options.userName,

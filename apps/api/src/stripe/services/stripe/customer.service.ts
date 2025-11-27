@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { StripeRepository } from '@/stripe/repositories/stripe.repository';
 import { PrismaService } from '@/libs/prisma/prisma.service';
 

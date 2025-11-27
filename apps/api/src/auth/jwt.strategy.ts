@@ -64,12 +64,30 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         },
       });
 
+      // Buscar role do usuário
+      const userRole = await this.prisma.userRole.findFirst({
+        where: {
+          userId: user.id,
+          tenantId: user.tenantId,
+          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+        },
+        include: {
+          role: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      });
+
       return {
         userId: user.id,
         email: user.email,
         name: user.name,
         tenantId: user.tenantId,
         tenant,
+        role: userRole?.role || null,
       };
     } catch {
       throw new UnauthorizedException('Token inválido');
