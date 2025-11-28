@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+/* TalentLoop - Paleta Violeta/Roxo/Azul */
+:root {
+  --background: #faf5ff;
+  --foreground: #1f2937;
+
+  /* Primary - Violet */
+  --primary: #7c3aed;
+  --primary-light: #a78bfa;
+  --primary-dark: #5b21b6;
+
+  /* Secondary - Blue */
+  --secondary: #3b82f6;
+  --secondary-light: #60a5fa;
+  --secondary-dark: #1d4ed8;
+
+  /* Accent - Indigo */
+  --accent: #6366f1;
+  --accent-light: #818cf8;
+  --accent-dark: #4f46e5;
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+  --gradient-secondary: linear-gradient(135deg, #7c3aed 0%, #3b82f6 100%);
+  --gradient-accent: linear-gradient(135deg, #6366f1 0%, #3b82f6 100%);
+}
+
+@theme inline {
+  --font-sans: var(--font-montserrat-sans);
+
+  /* Tailwind CSS custom colors */
+  --color-primary: #7c3aed;
+  --color-primary-light: #a78bfa;
+  --color-primary-dark: #5b21b6;
+  --color-secondary: #3b82f6;
+  --color-secondary-light: #60a5fa;
+  --color-secondary-dark: #1d4ed8;
+  --color-accent: #6366f1;
+  --color-accent-light: #818cf8;
+  --color-accent-dark: #4f46e5;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0f0a1a;
+    --foreground: #f3f4f6;
+
+    /* Primary - Lighter violet for dark mode */
+    --primary: #a78bfa;
+    --primary-light: #c4b5fd;
+    --primary-dark: #7c3aed;
+
+    /* Secondary - Lighter blue for dark mode */
+    --secondary: #60a5fa;
+    --secondary-light: #93c5fd;
+    --secondary-dark: #3b82f6;
+
+    /* Accent - Lighter indigo for dark mode */
+    --accent: #818cf8;
+    --accent-light: #a5b4fc;
+    --accent-dark: #6366f1;
+  }
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+/* MUI + Tailwind Integration */
+.MuiButton-root {
+  @apply font-semibold;
+}
+
+/* Custom scrollbar for violet theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-light);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Selection color */
+::selection {
+  background-color: var(--primary);
+  color: white;
+}
+
+/* Focus ring for accessibility */
+*:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
