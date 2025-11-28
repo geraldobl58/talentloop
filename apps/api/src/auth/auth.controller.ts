@@ -74,7 +74,8 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'User signin',
-    description: 'Authenticates user and returns JWT access token',
+    description:
+      'Authenticates user and returns JWT access token. If tenantId is not provided, defaults to "candidates" tenant for individual users.',
   })
   @ApiBody({ type: SignInDto })
   @ApiResponse({
@@ -86,10 +87,13 @@ export class AuthController {
     description: 'Invalid credentials',
   })
   async signin(@Body() dto: SignInDto) {
+    // Default to "candidates" tenant if not provided (for individual job seekers)
+    const tenantId = dto.tenantId || 'candidates';
+
     return await this.service.signIn(
       dto.email,
       dto.password,
-      dto.tenantId,
+      tenantId,
       dto.twoFactorToken,
     );
   }
