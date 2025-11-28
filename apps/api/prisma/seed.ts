@@ -1,4 +1,4 @@
-import { PrismaClient, RoleType } from '@prisma/client';
+import { PrismaClient, RoleType, TenantType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -420,14 +420,143 @@ async function main() {
   // Create Test Tenants & Users
   // ============================
 
-  // Test Tenant 1: Startup Company - Active with PROFESSIONAL plan
+  // ============================
+  // CANDIDATOS (Tenant Type: CANDIDATE)
+  // ============================
+  console.log('\n📝 Creating CANDIDATE tenants...');
+
+  // Candidate Tenant 1: Default candidates tenant (for login without tenantId)
+  const candidatesTenant = await prisma.tenant.create({
+    data: {
+      name: 'Candidatos TalentLoop',
+      slug: 'candidates',
+      type: TenantType.CANDIDATE,
+    },
+  });
+  console.log('✅ Created Candidates Tenant:', candidatesTenant.id);
+
+  // Candidate 1: Basic user
+  const candidate1 = await prisma.user.create({
+    data: {
+      tenantId: candidatesTenant.id,
+      name: 'Felipe Developer',
+      email: 'felipe@gmail.com',
+      password: await hashPassword('SenhaForte123!@#'),
+      isActive: true,
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=felipe',
+      twoFactorEnabled: false,
+    },
+  });
+  console.log('✅ Created Candidate 1 (Felipe):', candidate1.id);
+
+  await prisma.userRole.create({
+    data: {
+      userId: candidate1.id,
+      roleId: memberRole.id,
+      tenantId: candidatesTenant.id,
+      assignedBy: 'system',
+    },
+  });
+
+  // Candidate 2: User with 2FA
+  const candidate2 = await prisma.user.create({
+    data: {
+      tenantId: candidatesTenant.id,
+      name: 'Juliana Backend',
+      email: 'juliana@hotmail.com',
+      password: await hashPassword('SenhaForte123!@#'),
+      isActive: true,
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=juliana',
+      twoFactorEnabled: true,
+      twoFactorSecret: 'JBSWY3DPEBLW64TMMQ======',
+      twoFactorBackupCodes: generateBackupCodes(),
+    },
+  });
+  console.log('✅ Created Candidate 2 (Juliana with 2FA):', candidate2.id);
+
+  await prisma.userRole.create({
+    data: {
+      userId: candidate2.id,
+      roleId: memberRole.id,
+      tenantId: candidatesTenant.id,
+      assignedBy: 'system',
+    },
+  });
+
+  // Candidate 3: Full Stack Developer
+  const candidate3 = await prisma.user.create({
+    data: {
+      tenantId: candidatesTenant.id,
+      name: 'Ricardo Frontend',
+      email: 'ricardo@yahoo.com',
+      password: await hashPassword('SenhaForte123!@#'),
+      isActive: true,
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=ricardo',
+      twoFactorEnabled: false,
+    },
+  });
+  console.log('✅ Created Candidate 3 (Ricardo):', candidate3.id);
+
+  await prisma.userRole.create({
+    data: {
+      userId: candidate3.id,
+      roleId: memberRole.id,
+      tenantId: candidatesTenant.id,
+      assignedBy: 'system',
+    },
+  });
+
+  // Candidate 4: Inactive candidate
+  const candidate4 = await prisma.user.create({
+    data: {
+      tenantId: candidatesTenant.id,
+      name: 'Amanda Designer',
+      email: 'amanda@outlook.com',
+      password: await hashPassword('SenhaForte123!@#'),
+      isActive: false,
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=amanda',
+      twoFactorEnabled: false,
+    },
+  });
+  console.log('✅ Created Candidate 4 (Amanda - Inactive):', candidate4.id);
+
+  await prisma.userRole.create({
+    data: {
+      userId: candidate4.id,
+      roleId: memberRole.id,
+      tenantId: candidatesTenant.id,
+      assignedBy: 'system',
+    },
+  });
+
+  // Subscription for candidates tenant (Trial)
+  const candidatesSubscription = await prisma.subscription.create({
+    data: {
+      tenantId: candidatesTenant.id,
+      planId: trialPlan.id,
+      status: 'ACTIVE',
+      startedAt: new Date(),
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days trial
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+    },
+  });
+  console.log('✅ Created Candidates Subscription:', candidatesSubscription.id);
+
+  // ============================
+  // EMPRESAS (Tenant Type: COMPANY)
+  // ============================
+  console.log('\n🏢 Creating COMPANY tenants...');
+
+  // Company Tenant 1: Startup Company - Active with PROFESSIONAL plan
   const tenant1 = await prisma.tenant.create({
     data: {
       name: 'Tech Startup Co',
       slug: 'tech-startup-co',
+      type: TenantType.COMPANY,
     },
   });
-  console.log('✅ Created Tenant 1:', tenant1.id);
+  console.log('✅ Created Company Tenant 1:', tenant1.id);
 
   const user1 = await prisma.user.create({
     data: {
@@ -495,9 +624,10 @@ async function main() {
     data: {
       name: 'Digital Agency',
       slug: 'digital-agency',
+      type: TenantType.COMPANY,
     },
   });
-  console.log('✅ Created Tenant 2:', tenant2.id);
+  console.log('✅ Created Company Tenant 2:', tenant2.id);
 
   const user3 = await prisma.user.create({
     data: {
@@ -540,9 +670,10 @@ async function main() {
     data: {
       name: 'Enterprise Corp',
       slug: 'enterprise-corp',
+      type: TenantType.COMPANY,
     },
   });
-  console.log('✅ Created Tenant 3:', tenant3.id);
+  console.log('✅ Created Company Tenant 3:', tenant3.id);
 
   const user4 = await prisma.user.create({
     data: {
@@ -610,9 +741,10 @@ async function main() {
     data: {
       name: 'Overdue Business',
       slug: 'overdue-business',
+      type: TenantType.COMPANY,
     },
   });
-  console.log('✅ Created Tenant 4:', tenant4.id);
+  console.log('✅ Created Company Tenant 4:', tenant4.id);
 
   const user6 = await prisma.user.create({
     data: {
@@ -658,9 +790,10 @@ async function main() {
     data: {
       name: 'Former Customer',
       slug: 'former-customer',
+      type: TenantType.COMPANY,
     },
   });
-  console.log('✅ Created Tenant 5:', tenant5.id);
+  console.log('✅ Created Company Tenant 5:', tenant5.id);
 
   const user7 = await prisma.user.create({
     data: {
@@ -730,6 +863,33 @@ async function main() {
   console.log('\n🌱 Seed completed successfully!');
   console.log('\n📋 Test Credentials:');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+  console.log('\n👤 CANDIDATOS (Login sem Tenant ID):');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+  console.log('\n1️⃣  Candidato Básico:');
+  console.log('   Email: felipe@gmail.com');
+  console.log('   Password: SenhaForte123!@#');
+  console.log('   Status: ✅ Active, ❌ No 2FA');
+
+  console.log('\n2️⃣  Candidato com 2FA:');
+  console.log('   Email: juliana@hotmail.com');
+  console.log('   Password: SenhaForte123!@#');
+  console.log('   Status: ✅ Active, ✅ 2FA Enabled');
+
+  console.log('\n3️⃣  Candidato Frontend:');
+  console.log('   Email: ricardo@yahoo.com');
+  console.log('   Password: SenhaForte123!@#');
+  console.log('   Status: ✅ Active, ❌ No 2FA');
+
+  console.log('\n4️⃣  Candidato Inativo:');
+  console.log('   Email: amanda@outlook.com');
+  console.log('   Password: SenhaForte123!@#');
+  console.log('   Status: ❌ Inactive');
+
+  console.log('\n\n🏢 EMPRESAS (Login com Tenant ID):');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
   console.log('\n1️⃣  Basic User (No 2FA):');
   console.log('   Tenant ID: tech-startup-co');
   console.log('   Email: joao@techstartup.com');
