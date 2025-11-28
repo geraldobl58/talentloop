@@ -88,6 +88,7 @@ export class SignInService {
       email: user.email,
       tenantId: user.tenantId,
       tenantSlug: tenant.slug,
+      tenantType: tenant.type, // CANDIDATE or COMPANY
     };
 
     const access_token = await this.jwtService.signAsync(payload);
@@ -97,6 +98,7 @@ export class SignInService {
     return {
       requiresTwoFactor: false,
       access_token,
+      tenantType: tenant.type, // Return tenant type to frontend
       user: {
         id: user.id,
         name: user.name,
@@ -122,10 +124,11 @@ export class SignInService {
       email: user.email,
       tenantId: user.tenantId,
       tenantSlug: tenant?.slug,
+      tenantType: tenant?.type,
     };
 
     const access_token = await this.jwtService.signAsync(payload);
 
-    return { access_token };
+    return { access_token, tenantType: tenant?.type };
   }
 }
