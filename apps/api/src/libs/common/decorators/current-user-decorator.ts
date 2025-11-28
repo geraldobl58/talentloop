@@ -1,5 +1,6 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { AuthenticatedRequest } from '../interfaces/request.interface';
+import { TenantType } from '@prisma/client';
 
 export interface CurrentUser {
   userId: string;
@@ -10,10 +11,12 @@ export interface CurrentUser {
     name: string;
   };
   tenantId: string;
+  tenantType: TenantType; // CANDIDATE or COMPANY
   tenant: {
     id: string;
     name: string;
     slug: string;
+    type: TenantType;
   };
 }
 
