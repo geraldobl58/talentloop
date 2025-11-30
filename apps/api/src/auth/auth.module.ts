@@ -7,6 +7,7 @@ import { memoryStorage } from 'multer';
 import { PrismaModule } from '@/libs/prisma/prisma.module';
 import { StripeModule } from '@/stripe/stripe.module';
 import { PlansModule } from '@/plans/plans.module';
+import { EmailModule } from '@/email/email.module';
 import { APP_CONSTANTS } from '@/libs/common/constants';
 
 // Repositories
@@ -18,6 +19,8 @@ import { SignInService } from './services/signin.service';
 import { PasswordService } from './services/password.service';
 import { ProfileService } from './services/profile.service';
 import { SignupService } from './services/signup.service';
+import { SignupTenantService } from './services/signup-tenant.service';
+import { SignupCheckoutService } from './services/signup-checkout.service';
 import { TwoFactorService } from './services/two-factor.service';
 import { AuthService } from './services/auth.service';
 
@@ -35,6 +38,7 @@ import { JwtStrategy } from './jwt.strategy';
     PrismaModule,
     forwardRef(() => StripeModule),
     forwardRef(() => PlansModule),
+    forwardRef(() => EmailModule),
     MulterModule.register({
       storage: memoryStorage(),
       limits: {
@@ -63,6 +67,8 @@ import { JwtStrategy } from './jwt.strategy';
     PasswordService,
     ProfileService,
     SignupService,
+    SignupTenantService,
+    SignupCheckoutService,
     TwoFactorService,
     // Orchestration
     AuthService,
@@ -76,6 +82,8 @@ import { JwtStrategy } from './jwt.strategy';
     // Services
     AuthService,
     SignupService,
+    SignupTenantService,
+    SignupCheckoutService,
     TwoFactorService,
     // Strategy
     JwtStrategy,

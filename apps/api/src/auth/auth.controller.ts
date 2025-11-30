@@ -13,8 +13,17 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthService } from './services/auth.service';
 import { SignupService } from './services/signup.service';
+import { SignupCheckoutService } from './services/signup-checkout.service';
 import { SignInDto } from './dto/signin.dto';
 import { SignupDto, SignupResponseDto } from './dto/signup.dto';
+import {
+  SignupCandidateDto,
+  SignupCandidateResponseDto,
+} from './dto/signup-candidate.dto';
+import {
+  SignupCompanyDto,
+  SignupCompanyResponseDto,
+} from './dto/signup-company.dto';
 import {
   ForgotPasswordDto,
   ResetPasswordDto,
@@ -43,14 +52,16 @@ export class AuthController {
   constructor(
     private service: AuthService,
     private signupService: SignupService,
+    private signupCheckoutService: SignupCheckoutService,
   ) {}
 
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'Company signup with plan selection',
+    summary: '[DEPRECATED] Company signup with plan selection',
     description:
-      'Creates a new tenant (company) with admin user, plan subscription, and optional Stripe integration for paid plans',
+      'DEPRECATED: Use /auth/signup/company instead. Creates a new tenant (company) with admin user, plan subscription, and optional Stripe integration for paid plans',
+    deprecated: true,
   })
   @ApiBody({ type: SignupDto })
   @ApiResponse({
@@ -68,6 +79,68 @@ export class AuthController {
   })
   async signup(@Body() body: SignupDto): Promise<SignupResponseDto> {
     return await this.signupService.signup(body);
+  }
+
+  // =============================================
+  // SIGNUP DE CANDIDATO (B2C)
+  // =============================================
+
+  @Post('signup/candidate')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Candidate signup',
+    description:
+      'Creates a new candidate user in the shared candidates tenant. Password will be sent via email.',
+  })
+  @ApiBody({ type: SignupCandidateDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Candidate successfully created',
+    type: SignupCandidateResponseDto,
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Email already registered',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Selected plan not found',
+  })
+  async signupCandidate(
+    @Body() body: SignupCandidateDto,
+  ): Promise<SignupCandidateResponseDto> {
+    return await this.signupCheckoutService.signupCandidate(body);
+  }
+
+  // =============================================
+  // SIGNUP DE EMPRESA (B2B)
+  // =============================================
+
+  @Post('signup/company')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Company signup',
+    description:
+      'Creates a new company (tenant) with admin user and plan subscription. Password will be sent via email.',
+  })
+  @ApiBody({ type: SignupCompanyDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Company successfully created',
+    type: SignupCompanyResponseDto,
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Domain already exists or email already registered',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Selected plan not found',
+  })
+  async signupCompany(
+    @Body() body: SignupCompanyDto,
+  ): Promise<SignupCompanyResponseDto> {
+    return await this.signupCheckoutService.signupCompany(body);
   }
 
   @Post('signin')

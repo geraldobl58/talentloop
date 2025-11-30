@@ -11,14 +11,18 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     cors: true,
     bufferLogs: true,
+    // Disable body parsing globally - we'll configure it per route
+    rawBody: true,
   });
 
   app.useLogger(app.get(Logger));
 
-  // Configurar raw body para webhooks do Stripe
+  // Configurar raw body para webhooks do Stripe PRIMEIRO
+  // O Stripe precisa do body como Buffer bruto para verificar a assinatura
   app.use('/stripe/webhook', express.raw({ type: 'application/json' }));
 
   // Configurar limite de tamanho para upload de arquivos
+  // Isso vai parsear JSON para todas as outras rotas
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
 

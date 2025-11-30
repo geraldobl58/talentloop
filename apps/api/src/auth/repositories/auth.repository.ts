@@ -245,7 +245,7 @@ export class AuthRepository {
     planId: string;
     status: SubStatus;
     startedAt: Date;
-    expiresAt: Date;
+    expiresAt: Date | null;
   }) {
     return this.prisma.subscription.create({ data });
   }
