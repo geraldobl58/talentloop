@@ -19,7 +19,27 @@ export class TemplateRepository {
   private templatesDir: string;
 
   constructor() {
-    this.templatesDir = path.join(__dirname, 'templates');
+    // Caminho para templates no dist (após build)
+    const distPath = path.join(__dirname, '..', 'templates');
+    // Caminho para templates no src (desenvolvimento)
+    const srcPath = path.join(
+      process.cwd(),
+      'src',
+      'notifications',
+      'templates',
+    );
+
+    // Em desenvolvimento, os arquivos estão em src; em produção, em dist
+    if (fs.existsSync(distPath)) {
+      this.templatesDir = distPath;
+    } else if (fs.existsSync(srcPath)) {
+      this.templatesDir = srcPath;
+    } else {
+      // Fallback para o caminho relativo ao __dirname
+      this.templatesDir = path.join(__dirname, 'templates');
+    }
+
+    console.log(`Templates directory: ${this.templatesDir}`);
   }
 
   /**
