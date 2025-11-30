@@ -19,6 +19,7 @@ export interface NotificationData {
 export class TemplateRenderService implements OnModuleInit {
   private readonly TEMPLATES_TO_PRELOAD = [
     'welcome',
+    'welcome-company',
     'password-reset',
     'limit-alert',
     'cancellation',
@@ -48,7 +49,7 @@ export class TemplateRenderService implements OnModuleInit {
   }
 
   /**
-   * Renderizar email de boas-vindas
+   * Renderizar email de boas-vindas para candidatos
    */
   renderWelcome(data: {
     userName: string;
@@ -58,6 +59,21 @@ export class TemplateRenderService implements OnModuleInit {
     loginUrl: string;
   }): string {
     return this.render('welcome', data);
+  }
+
+  /**
+   * Renderizar email de boas-vindas para empresas
+   */
+  renderWelcomeCompany(data: {
+    userName: string;
+    companyName: string;
+    tenantId: string;
+    email: string;
+    password: string;
+    planName: string;
+    loginUrl: string;
+  }): string {
+    return this.render('welcome-company', data);
   }
 
   /**
