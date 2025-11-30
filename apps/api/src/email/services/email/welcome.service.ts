@@ -31,23 +31,43 @@ export class WelcomeEmailService {
     password: string;
     planName: string;
     loginUrl: string;
+    companyName?: string;
+    tenantId?: string;
   }): Promise<void> {
     try {
-      const html = this.templateRenderService.renderWelcome({
-        userName: options.userName,
-        email: options.email,
-        password: options.password,
-        planName: options.planName,
-        loginUrl: options.loginUrl,
-      });
+      const isCompany = !!options.companyName && !!options.tenantId;
+
+      const html = isCompany
+        ? this.templateRenderService.renderWelcomeCompany({
+            userName: options.userName,
+            companyName: options.companyName!,
+            tenantId: options.tenantId!,
+            email: options.email,
+            password: options.password,
+            planName: options.planName,
+            loginUrl: options.loginUrl,
+          })
+        : this.templateRenderService.renderWelcome({
+            userName: options.userName,
+            email: options.email,
+            password: options.password,
+            planName: options.planName,
+            loginUrl: options.loginUrl,
+          });
+
+      const subject = isCompany
+        ? `🏢 Bem-vindo ao TalentLoop, ${options.companyName}! 🎉`
+        : 'Bem-vindo ao TalentLoop! 🎉';
 
       await this.emailRepository.send({
         to: options.to,
-        subject: 'Bem-vindo ao sass-multitenant! 🎉',
+        subject,
         html,
       });
 
-      this.logger.log(`Welcome email sent to ${options.to}`);
+      this.logger.log(
+        `Welcome email sent to ${options.to} (${isCompany ? 'company' : 'candidate'})`,
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       this.logger.error(
