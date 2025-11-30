@@ -3,6 +3,18 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
-    "deleteOutDir": true
+    "deleteOutDir": true,
+    "assets": [
+      {
+        "include": "notifications/templates/**/*.pug",
+        "outDir": "dist",
+        "watchAssets": true
+      },
+      {
+        "include": "notifications/templates/styles/**/*.css",
+        "outDir": "dist",
+        "watchAssets": true
+      }
+    ]
   }
 }

@@ -302,7 +302,7 @@ model StripeCheckoutSession {
   companyName      String
   contactName      String
   contactEmail     String
-  domain           String
+  domain           String?  // Opcional - usado apenas para empresas
   planId           String
   planName         String
 
@@ -314,10 +314,10 @@ model StripeCheckoutSession {
   createdAt DateTime @default(now())
   expiresAt DateTime // Expira após 24 horas
 
-  @@unique([domain])
   @@index([sessionId])
   @@index([stripeCustomerId])
   @@index([successToken])
+  @@index([contactEmail])
   @@index([createdAt])
 }
 
