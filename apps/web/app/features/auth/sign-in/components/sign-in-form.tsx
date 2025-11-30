@@ -177,7 +177,7 @@ export const SignInForm = ({
         <Typography variant="caption" className="text-xs text-gray-600">
           Esqueceu sua senha?{" "}
           <Link
-            href="/auth/password-reset"
+            href="/auth/forgot-password"
             className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
           >
             Redefinir Senha
