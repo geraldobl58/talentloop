@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { StripeRepository } from '@/stripe/repositories/stripe.repository';
 import { PrismaService } from '@/libs/prisma/prisma.service';
+import { SignupCheckoutService } from '@/auth/services/signup-checkout.service';
 
 @Injectable()
 export class StripeWebhookService {
@@ -9,12 +10,16 @@ export class StripeWebhookService {
   constructor(
     private readonly stripeRepository: StripeRepository,
     private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => SignupCheckoutService))
+    private readonly signupCheckoutService: SignupCheckoutService,
   ) {}
 
   async handleWebhookEvent(event: any) {
     this.logger.log(`Processing webhook event: ${event.type}`);
 
     switch (event.type) {
+      case 'checkout.session.completed':
+        return this.handleCheckoutCompleted(event.data.object);
       case 'customer.subscription.updated':
         return this.handleSubscriptionUpdated(event.data.object);
       case 'customer.subscription.deleted':
@@ -27,6 +32,11 @@ export class StripeWebhookService {
         this.logger.debug(`Unhandled event type: ${event.type}`);
         return null;
     }
+  }
+
+  private async handleCheckoutCompleted(session: any): Promise<void> {
+    this.logger.log(`Checkout session completed: ${session.id}`);
+    await this.signupCheckoutService.handleCheckoutCompleted(session.id);
   }
 
   private handleSubscriptionUpdated(subscription: any): void {

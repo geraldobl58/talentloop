@@ -4,6 +4,7 @@ import {
   Headers,
   Req,
   BadRequestException,
+  RawBodyRequest,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { Request } from 'express';
@@ -17,14 +18,16 @@ export class StripeController {
   @Post('webhook')
   @ApiOperation({ summary: 'Handle Stripe webhook events' })
   async handleWebhook(
-    @Req() req: Request,
+    @Req() req: RawBodyRequest<Request>,
     @Headers('stripe-signature') signature: string,
   ) {
     if (!signature) {
       throw new BadRequestException('Cabeçalho stripe-signature ausente');
     }
 
-    const payload = req.body;
+    // Use rawBody for Stripe signature verification
+    // The raw body is needed because Stripe signs the raw payload
+    const payload = req.rawBody || req.body;
 
     if (!payload) {
       throw new BadRequestException('Nenhum payload de webhook fornecido');

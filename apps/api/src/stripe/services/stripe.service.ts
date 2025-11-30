@@ -1,4 +1,10 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { StripeCustomerService } from '@/stripe/services/stripe/customer.service';
 import { StripeCheckoutService } from '@/stripe/services/stripe/checkout.service';
@@ -23,6 +29,7 @@ export class StripeService {
     private readonly customerService: StripeCustomerService,
     private readonly checkoutService: StripeCheckoutService,
     private readonly subscriptionService: StripeSubscriptionService,
+    @Inject(forwardRef(() => StripeWebhookService))
     private readonly webhookService: StripeWebhookService,
   ) {}
 

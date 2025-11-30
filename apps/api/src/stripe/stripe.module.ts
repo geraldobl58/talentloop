@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from '@/libs/prisma/prisma.module';
+import { AuthModule } from '@/auth/auth.module';
 
 // Repositories
 import { StripeRepository } from './repositories/stripe.repository';
@@ -17,7 +18,7 @@ import { StripeService } from './services/stripe.service';
 import { StripeController } from './stripe.controller';
 
 @Module({
-  imports: [ConfigModule, PrismaModule],
+  imports: [ConfigModule, PrismaModule, forwardRef(() => AuthModule)],
   controllers: [StripeController],
   providers: [
     // Repositories
