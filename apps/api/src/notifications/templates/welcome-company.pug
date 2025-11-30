@@ -55,6 +55,12 @@ html(lang="pt-BR")
         font-size: 16px;
         line-height: 1.6;
       }
+      .company-name {
+        font-size: 20px;
+        font-weight: bold;
+        color: #667eea;
+        margin: 10px 0;
+      }
       .plan-badge {
         display: inline-block;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -105,6 +111,12 @@ html(lang="pt-BR")
         color: #92400e;
         font-weight: 600;
       }
+      .tenant-value {
+        background: #dbeafe;
+        border-color: #3b82f6;
+        color: #1e40af;
+        font-weight: 600;
+      }
       .security-notice {
         background: #fff7ed;
         border: 1px solid #fdba74;
@@ -120,6 +132,24 @@ html(lang="pt-BR")
       }
       .security-notice p {
         color: #9a3412;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      .info-notice {
+        background: #eff6ff;
+        border: 1px solid #93c5fd;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 15px;
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+      }
+      .info-notice .icon {
+        font-size: 24px;
+      }
+      .info-notice p {
+        color: #1e40af;
         font-size: 14px;
         line-height: 1.5;
       }
@@ -161,17 +191,21 @@ html(lang="pt-BR")
   body
     .container
       .header
-        h1 🎉 Bem-vindo ao TalentLoop!
-        p Sua jornada para o sucesso começa agora
+        h1 🏢 Bem-vindo ao TalentLoop!
+        p Sua empresa agora tem acesso à melhor plataforma de recrutamento
 
       .content
         .welcome-box
           h2 Olá, #{userName}!
-          p Sua conta foi criada com sucesso. Estamos muito felizes em ter você conosco!
-          .plan-badge #{planName}
+          p.company-name #{companyName}
+          p A conta da sua empresa foi criada com sucesso. Estamos prontos para revolucionar seu processo de recrutamento!
+          .plan-badge Plano #{planName}
 
         .credentials-box
-          h3 🔐 Suas Credenciais de Acesso
+          h3 🔐 Credenciais de Acesso
+          .credential-row
+            span.credential-label Tenant ID:
+            span.credential-value.tenant-value #{tenantId}
           .credential-row
             span.credential-label Email:
             span.credential-value #{email}
@@ -179,14 +213,20 @@ html(lang="pt-BR")
             span.credential-label Senha:
             span.credential-value.password-value #{password}
           
+          .info-notice
+            span.icon ℹ️
+            p
+              strong IMPORTANTE:
+              |  O Tenant ID é o identificador único da sua empresa. Você precisará dele para fazer login.
+
           .security-notice
             span.icon ⚠️
             p
-              strong IMPORTANTE:
+              strong SEGURANÇA:
               |  Por segurança, recomendamos que você altere esta senha temporária no seu primeiro acesso.
 
         .cta-button
-          a(href=loginUrl) 🚀 Fazer Login Agora
+          a(href=loginUrl) 🚀 Acessar Painel da Empresa
 
       .footer
         p Equipe TalentLoop
