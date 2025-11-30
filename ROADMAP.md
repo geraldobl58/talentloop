@@ -237,8 +237,9 @@ Total estimado: ~R$ 682.550/mês
 
 ### RF01 - Autenticação e Autorização
 
-- [ ] RF01.1 - Cadastro de usuário com email/senha
-- [ ] RF01.2 - Login com email/senha
+- [x] RF01.1 - Cadastro de usuário com email/senha
+- [x] RF01.2 - Login com email/senha
+- [x] RF01.2 - Instegração com Stripe
 - [ ] RF01.3 - Autenticação de dois fatores (2FA)
 - [ ] RF01.4 - Recuperação de senha por email
 - [ ] RF01.5 - Refresh token automático
