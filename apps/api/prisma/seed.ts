@@ -325,14 +325,158 @@ async function main() {
   console.log('✅ Assigned permissions to VIEWER');
 
   // ============================
-  // Create Plans
+  // Create Plans - Candidatos (B2C)
   // ============================
+  console.log('\n📋 Creating plans...');
+
+  const freePlan = await prisma.plan.create({
+    data: {
+      name: 'FREE',
+      price: 0,
+      currency: 'BRL',
+      description: 'Para começar sua busca de emprego',
+      maxUsers: 1,
+      maxContacts: 10,
+      hasAPI: false,
+      trialDurationHours: null, // Não tem trial, é grátis para sempre
+      maxJobsPerDay: 100,
+      maxApplicationsPerDay: 10,
+      maxAutoApplyPerDay: 0,
+      hasAIMatching: true, // AI Matching básico
+      hasAutoApply: false,
+      hasRecruiterCRM: false,
+      hasPrioritySupport: false,
+      stripeProductId: null,
+      stripePriceId: null,
+    },
+  });
+  console.log('✅ Created FREE plan:', freePlan.id);
+
+  const proPlan = await prisma.plan.create({
+    data: {
+      name: 'PRO',
+      price: 29,
+      currency: 'BRL',
+      description: 'Para candidatos que querem se destacar',
+      maxUsers: 1,
+      maxContacts: 100,
+      hasAPI: false,
+      trialDurationHours: 168, // 7 dias de trial
+      maxJobsPerDay: null, // Ilimitado
+      maxApplicationsPerDay: 50,
+      maxAutoApplyPerDay: 10,
+      hasAIMatching: true,
+      hasAutoApply: true,
+      hasRecruiterCRM: false,
+      hasPrioritySupport: false,
+      stripeProductId: 'prod_TWFBGZdUWTOEsM',
+      stripePriceId: 'price_1SZChNAB7ykXDk2odptmp1b2',
+    },
+  });
+  console.log('✅ Created PRO plan:', proPlan.id);
+
+  const premiumPlan = await prisma.plan.create({
+    data: {
+      name: 'PREMIUM',
+      price: 79,
+      currency: 'BRL',
+      description: 'Máximo poder na sua busca de emprego',
+      maxUsers: 1,
+      maxContacts: null, // Ilimitado
+      hasAPI: true,
+      trialDurationHours: 168, // 7 dias de trial
+      maxJobsPerDay: null, // Ilimitado
+      maxApplicationsPerDay: null, // Ilimitado
+      maxAutoApplyPerDay: 30,
+      hasAIMatching: true,
+      hasAutoApply: true,
+      hasRecruiterCRM: true,
+      hasPrioritySupport: true,
+      stripeProductId: 'prod_TWFCsrfG6AzpRd',
+      stripePriceId: 'price_1SZCi8AB7ykXDk2o8kMGyeB8',
+    },
+  });
+  console.log('✅ Created PREMIUM plan:', premiumPlan.id);
+
+  // ============================
+  // Create Plans - Empresas (B2B)
+  // ============================
+  const startupPlan = await prisma.plan.create({
+    data: {
+      name: 'STARTUP',
+      price: 299,
+      currency: 'BRL',
+      description: 'Para startups e pequenas empresas',
+      maxUsers: 5,
+      maxContacts: 500,
+      hasAPI: false,
+      trialDurationHours: 336, // 14 dias de trial
+      maxJobsPerDay: 100,
+      maxApplicationsPerDay: null, // N/A para empresas
+      maxAutoApplyPerDay: null, // N/A para empresas
+      hasAIMatching: true,
+      hasAutoApply: false,
+      hasRecruiterCRM: true,
+      hasPrioritySupport: false,
+      stripeProductId: 'prod_TWFCPtcu11J5d1',
+      stripePriceId: 'price_1SZCiOAB7ykXDk2ovan6tdcz',
+    },
+  });
+  console.log('✅ Created STARTUP plan:', startupPlan.id);
+
+  const businessPlan = await prisma.plan.create({
+    data: {
+      name: 'BUSINESS',
+      price: 799,
+      currency: 'BRL',
+      description: 'Para empresas em crescimento',
+      maxUsers: 20,
+      maxContacts: 2000,
+      hasAPI: true,
+      trialDurationHours: 336, // 14 dias de trial
+      maxJobsPerDay: null, // Ilimitado
+      maxApplicationsPerDay: null,
+      maxAutoApplyPerDay: null,
+      hasAIMatching: true,
+      hasAutoApply: false,
+      hasRecruiterCRM: true,
+      hasPrioritySupport: true,
+      stripeProductId: 'prod_TWFCQEI3FclXgZ',
+      stripePriceId: 'price_1SZCieAB7ykXDk2oys9TyCGQ',
+    },
+  });
+  console.log('✅ Created BUSINESS plan:', businessPlan.id);
+
+  const enterprisePlan = await prisma.plan.create({
+    data: {
+      name: 'ENTERPRISE',
+      price: 0, // Sob consulta
+      currency: 'BRL',
+      description: 'Solução customizada para grandes empresas',
+      maxUsers: null, // Ilimitado
+      maxContacts: null, // Ilimitado
+      hasAPI: true,
+      trialDurationHours: null, // Sem trial - contato comercial
+      maxJobsPerDay: null,
+      maxApplicationsPerDay: null,
+      maxAutoApplyPerDay: null,
+      hasAIMatching: true,
+      hasAutoApply: false,
+      hasRecruiterCRM: true,
+      hasPrioritySupport: true,
+      stripeProductId: null,
+      stripePriceId: null,
+    },
+  });
+  console.log('✅ Created ENTERPRISE plan:', enterprisePlan.id);
+
+  // Legacy plans for compatibility
   const trialPlan = await prisma.plan.create({
     data: {
       name: 'TRIAL',
       price: 0,
       currency: 'BRL',
-      description: 'Experimente grátis por 7 dias',
+      description: 'Experimente grátis por 7 dias (legado)',
       maxUsers: 1,
       maxContacts: 10,
       hasAPI: false,
@@ -348,14 +492,14 @@ async function main() {
       stripePriceId: null,
     },
   });
-  console.log('✅ Created TRIAL plan:', trialPlan.id);
+  console.log('✅ Created TRIAL plan (legacy):', trialPlan.id);
 
   const starterPlan = await prisma.plan.create({
     data: {
       name: 'STARTER',
-      price: 49.99,
+      price: 149.99,
       currency: 'BRL',
-      description: 'Perfeito para começar sua busca',
+      description: 'Perfeito para começar sua busca (legado)',
       maxUsers: 1,
       maxContacts: 50,
       hasAPI: false,
@@ -370,14 +514,14 @@ async function main() {
       stripePriceId: 'price_1SGM3uAB7ykXDk2oUJravQQK',
     },
   });
-  console.log('✅ Created STARTER plan:', starterPlan.id);
+  console.log('✅ Created STARTER plan (legacy):', starterPlan.id);
 
   const professionalPlan = await prisma.plan.create({
     data: {
       name: 'PROFESSIONAL',
-      price: 99.99,
+      price: 299.99,
       currency: 'BRL',
-      description: 'Para quem quer acelerar a carreira',
+      description: 'Para quem quer acelerar a carreira (legado)',
       maxUsers: 1,
       maxContacts: 200,
       hasAPI: true,
@@ -392,29 +536,7 @@ async function main() {
       stripePriceId: 'price_1SGM4CAB7ykXDk2ow5PfFVyb',
     },
   });
-  console.log('✅ Created PROFESSIONAL plan:', professionalPlan.id);
-
-  const enterprisePlan = await prisma.plan.create({
-    data: {
-      name: 'ENTERPRISE',
-      price: 199.99,
-      currency: 'BRL',
-      description: 'Recursos ilimitados + suporte prioritário',
-      maxUsers: 5,
-      maxContacts: null, // ilimitado
-      hasAPI: true,
-      maxJobsPerDay: null, // ilimitado
-      maxApplicationsPerDay: null, // ilimitado
-      maxAutoApplyPerDay: 100,
-      hasAIMatching: true,
-      hasAutoApply: true,
-      hasRecruiterCRM: true,
-      hasPrioritySupport: true,
-      stripeProductId: 'prod_TClb1eMmA798TY',
-      stripePriceId: 'price_1SGM4TAB7ykXDk2ozLp2ZBgF',
-    },
-  });
-  console.log('✅ Created ENTERPRISE plan:', enterprisePlan.id);
+  console.log('✅ Created PROFESSIONAL plan (legacy):', professionalPlan.id);
 
   // ============================
   // Create Test Tenants & Users
