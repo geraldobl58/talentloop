@@ -66,6 +66,8 @@ export class EmailService {
     password: string;
     planName: string;
     loginUrl: string;
+    companyName?: string;
+    tenantId?: string;
   }): Promise<void> {
     await this.welcomeEmailService.sendWelcomeEmail(options);
   }
