@@ -6,10 +6,10 @@ export type {
   CompanyPlanType,
   PlanType,
   PlanOption,
-} from "../components/plans-data";
+} from "@/app/libs/plans-data";
 
-// Tenant types from backend
-export type TenantType = "CANDIDATE" | "COMPANY";
+// Re-export TenantType from shared
+export type { TenantType } from "@/app/shared/types";
 
 // =============================================
 // SIGN UP REQUEST/RESPONSE TYPES
@@ -31,7 +31,7 @@ export interface CompanySignUpRequest {
   companyName: string;
   contactName: string;
   contactEmail: string;
-  domain: string; // slug do tenant
+  domain: string;
   plan: "STARTUP" | "BUSINESS" | "ENTERPRISE";
 }
 
@@ -46,11 +46,10 @@ export type SignUpRequest = CandidateSignUpRequest | CompanySignUpRequest;
 export interface SignUpApiResponse {
   success: boolean;
   message?: string;
-  tenantType?: TenantType;
+  tenantType?: "CANDIDATE" | "COMPANY";
   tenantId?: string;
   userId?: string;
-  checkoutUrl?: string; // URL do Stripe para pagamento
-  isTrial?: boolean;
+  checkoutUrl?: string;
   requiresPayment?: boolean;
   user?: {
     id: string;
@@ -61,7 +60,7 @@ export interface SignUpApiResponse {
     id: string;
     name: string;
     slug: string;
-    type: TenantType;
+    type: "CANDIDATE" | "COMPANY";
   };
   plan?: {
     id: string;
@@ -69,7 +68,7 @@ export interface SignUpApiResponse {
     price: number;
     currency: string;
   };
-  token?: string; // JWT token para login automático (trials/free)
+  token?: string;
 }
 
 /**
@@ -78,12 +77,11 @@ export interface SignUpApiResponse {
 export interface SignUpResponse {
   success: boolean;
   message?: string;
-  tenantType?: TenantType;
+  tenantType?: "CANDIDATE" | "COMPANY";
   tenantSlug?: string;
   tenantId?: string;
   token?: string;
   checkoutUrl?: string;
-  isTrial?: boolean;
   isFree?: boolean;
   requiresPayment?: boolean;
   userId?: string;
