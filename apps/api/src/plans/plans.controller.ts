@@ -25,6 +25,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../libs/common/guards/jwt-auth.guard';
+import { TenantIsolationGuard } from '../libs/common/guards/tenant-isolation.guard';
 import {
   GetCurrentUser,
   CurrentUser,
@@ -32,11 +33,11 @@ import {
 
 @ApiTags('Plans')
 @Controller('plans')
+@UseGuards(JwtAuthGuard, TenantIsolationGuard)
 export class PlansController {
   constructor(private readonly plansService: PlansService) {}
 
   @Get('available')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get all available plans',
@@ -51,7 +52,6 @@ export class PlansController {
   }
 
   @Get('info')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get complete tenant subscription information',
@@ -83,7 +83,6 @@ export class PlansController {
   }
 
   @Post('upgrade')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -130,7 +129,6 @@ export class PlansController {
   }
 
   @Post('cancel')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -164,7 +162,6 @@ export class PlansController {
   }
 
   @Post('reactivate')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -209,7 +206,6 @@ export class PlansController {
   }
 
   @Get('history')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get plan history with summary',
@@ -232,7 +228,6 @@ export class PlansController {
   }
 
   @Get('history/detailed')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get detailed plan history timeline',
@@ -255,7 +250,6 @@ export class PlansController {
   }
 
   @Post('checkout-session')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Create checkout session',
@@ -290,7 +284,6 @@ export class PlansController {
   }
 
   @Post('billing-portal')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Create billing portal session',
@@ -325,7 +318,6 @@ export class PlansController {
   }
 
   @Get('subscription/validate')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Validate subscription',
