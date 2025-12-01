@@ -94,7 +94,19 @@ export class AuthRepository {
    */
   async findUserByEmail(email: string): Promise<User | null> {
     return this.prisma.user.findFirst({
-      where: { email },
+      where: { email, deletedAt: null, isActive: true },
+    });
+  }
+
+  /**
+   * Encontrar usuário por email com tenant (para identificar automaticamente o tenant)
+   */
+  async findUserByEmailWithTenant(
+    email: string,
+  ): Promise<(User & { tenant: Tenant }) | null> {
+    return this.prisma.user.findFirst({
+      where: { email, deletedAt: null, isActive: true },
+      include: { tenant: true },
     });
   }
 
