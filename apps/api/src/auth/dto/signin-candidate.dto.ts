@@ -10,14 +10,14 @@ import {
 } from 'class-validator';
 
 /**
- * DTO unificado para signin
- * O sistema detecta automaticamente se é candidato ou empresa pelo email
+ * DTO para signin de candidatos (B2C)
+ * Não requer tenantId - usa automaticamente o tenant "candidates"
  */
-export class SignInDto {
+export class SignInCandidateDto {
   @IsEmail()
   @ApiProperty({
-    example: 'usuario@email.com',
-    description: 'Email do usuário',
+    example: 'joao@email.com',
+    description: 'Email do candidato',
   })
   email: string;
 
@@ -53,11 +53,11 @@ export class SignInDto {
 }
 
 /**
- * Resposta do signin
+ * Resposta do signin de candidato
  */
-export class SignInResponseDto {
+export class SignInCandidateResponseDto {
   @ApiProperty({
-    example: false,
+    example: true,
     description: 'Indica se requer 2FA',
   })
   requiresTwoFactor: boolean;
@@ -71,11 +71,9 @@ export class SignInResponseDto {
 
   @ApiProperty({
     example: 'CANDIDATE',
-    description:
-      'Tipo do tenant (CANDIDATE ou COMPANY) - detectado automaticamente pelo email',
-    enum: ['CANDIDATE', 'COMPANY'],
+    description: 'Tipo do tenant (sempre CANDIDATE para esta rota)',
   })
-  tenantType: 'CANDIDATE' | 'COMPANY';
+  tenantType: 'CANDIDATE';
 
   @ApiProperty({
     description: 'Dados do usuário autenticado',

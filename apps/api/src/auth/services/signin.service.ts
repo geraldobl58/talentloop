@@ -11,6 +11,7 @@ import { TwoFactorService } from './two-factor.service';
  * - Autenticação de usuários
  * - Geração de tokens JWT
  * - Integração com 2FA
+ * - Detecção automática do tipo de tenant (candidato ou empresa)
  *
  * Princípio: Single Responsibility - APENAS autenticação
  */
@@ -25,34 +26,26 @@ export class SignInService {
   ) {}
 
   /**
-   * Autenticar usuário
+   * Autenticar usuário (detecção automática de tipo)
+   *
+   * O sistema detecta automaticamente se é candidato ou empresa pelo email:
+   * - Busca o usuário pelo email
+   * - Retorna o tipo correto (CANDIDATE ou COMPANY) baseado no tenant do usuário
    */
-  async execute(
-    email: string,
-    password: string,
-    tenantId: string,
-    twoFactorToken?: string,
-  ) {
+  async execute(email: string, password: string, twoFactorToken?: string) {
     this.logger.log(`[signIn] Iniciando signin para email: ${email}`);
 
-    // Verificar tenant
-    const tenant = await this.authRepository.findTenantByIdOrSlug(tenantId);
+    // Buscar usuário pelo email e incluir o tenant (detecta automaticamente o tipo)
+    const userWithTenant =
+      await this.authRepository.findUserByEmailWithTenant(email);
 
-    if (!tenant) {
-      this.logger.warn(`[signIn] Tenant não encontrado: ${tenantId}`);
-      throw new UnauthorizedException('Credenciais inválidas');
-    }
-
-    // Buscar usuário
-    const user = await this.authRepository.findUserByEmailAndTenant(
-      email,
-      tenant.id,
-    );
-
-    if (!user) {
+    if (!userWithTenant) {
       this.logger.warn(`[signIn] Usuário não encontrado: ${email}`);
       throw new UnauthorizedException('Credenciais inválidas');
     }
+
+    const user = userWithTenant;
+    const tenant = userWithTenant.tenant;
 
     // Validar senha
     const isPasswordValid = await compare(password, user.password);
@@ -93,7 +86,9 @@ export class SignInService {
 
     const access_token = await this.jwtService.signAsync(payload);
 
-    this.logger.log(`[signIn] Token gerado com sucesso para: ${email}`);
+    this.logger.log(
+      `[signIn] Token gerado com sucesso para: ${email} (${tenant.type})`,
+    );
 
     return {
       requiresTwoFactor: false,
