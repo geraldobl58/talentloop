@@ -3,10 +3,12 @@ export * from "./user-type";
 // Re-export TenantType from shared
 export type { TenantType } from "@/app/shared/types";
 
+/**
+ * Request para signin unificado (tipo detectado automaticamente pelo backend)
+ */
 export interface SignInRequest {
   email: string;
   password: string;
-  tenantId: string;
   twoFactorToken?: string;
 }
 
