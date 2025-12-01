@@ -346,8 +346,9 @@ async function main() {
       hasAutoApply: false,
       hasRecruiterCRM: false,
       hasPrioritySupport: false,
-      stripeProductId: null,
-      stripePriceId: null,
+      stripeProductId: 'prod_TWH5l9Ezml8H6n',
+      stripePriceId: 'price_1SZEWvAB7ykXDk2oTeCN16KS',
+      stripeLookupKey: 'candidate_free',
     },
   });
   console.log('✅ Created FREE plan:', freePlan.id);
@@ -369,8 +370,9 @@ async function main() {
       hasAutoApply: true,
       hasRecruiterCRM: false,
       hasPrioritySupport: false,
-      stripeProductId: 'prod_TWFBGZdUWTOEsM',
-      stripePriceId: 'price_1SZChNAB7ykXDk2odptmp1b2',
+      stripeProductId: 'prod_TWH5l9Ezml8H6n',
+      stripePriceId: 'price_1SZEWvAB7ykXDk2oAWvBm0pU',
+      stripeLookupKey: 'candidate_pro',
     },
   });
   console.log('✅ Created PRO plan:', proPlan.id);
@@ -392,8 +394,9 @@ async function main() {
       hasAutoApply: true,
       hasRecruiterCRM: true,
       hasPrioritySupport: true,
-      stripeProductId: 'prod_TWFCsrfG6AzpRd',
-      stripePriceId: 'price_1SZCi8AB7ykXDk2o8kMGyeB8',
+      stripeProductId: 'prod_TWH5l9Ezml8H6n',
+      stripePriceId: 'price_1SZEWvAB7ykXDk2owzhjQzs0',
+      stripeLookupKey: 'candidate_premium',
     },
   });
   console.log('✅ Created PREMIUM plan:', premiumPlan.id);
@@ -418,8 +421,9 @@ async function main() {
       hasAutoApply: false,
       hasRecruiterCRM: true,
       hasPrioritySupport: false,
-      stripeProductId: 'prod_TWFCPtcu11J5d1',
-      stripePriceId: 'price_1SZCiOAB7ykXDk2ovan6tdcz',
+      stripeProductId: 'prod_TWH3Ia3hFX25yw',
+      stripePriceId: 'price_1SZEUzAB7ykXDk2orH9Sz09y',
+      stripeLookupKey: 'company_startup',
     },
   });
   console.log('✅ Created STARTUP plan:', startupPlan.id);
@@ -441,8 +445,9 @@ async function main() {
       hasAutoApply: false,
       hasRecruiterCRM: true,
       hasPrioritySupport: true,
-      stripeProductId: 'prod_TWFCQEI3FclXgZ',
-      stripePriceId: 'price_1SZCieAB7ykXDk2oys9TyCGQ',
+      stripeProductId: 'prod_TWH3Ia3hFX25yw',
+      stripePriceId: 'price_1SZEUzAB7ykXDk2oQD2D6rse',
+      stripeLookupKey: 'company_business',
     },
   });
   console.log('✅ Created BUSINESS plan:', businessPlan.id);
@@ -450,7 +455,7 @@ async function main() {
   const enterprisePlan = await prisma.plan.create({
     data: {
       name: 'ENTERPRISE',
-      price: 0, // Sob consulta
+      price: 1399,
       currency: 'BRL',
       description: 'Solução customizada para grandes empresas',
       maxUsers: null, // Ilimitado
@@ -464,8 +469,9 @@ async function main() {
       hasAutoApply: false,
       hasRecruiterCRM: true,
       hasPrioritySupport: true,
-      stripeProductId: null,
-      stripePriceId: null,
+      stripeProductId: 'prod_TWH3Ia3hFX25yw',
+      stripePriceId: 'price_1SZEUzAB7ykXDk2oVh6L5gkT',
+      stripeLookupKey: 'company_enterprise',
     },
   });
   console.log('✅ Created ENTERPRISE plan:', enterprisePlan.id);

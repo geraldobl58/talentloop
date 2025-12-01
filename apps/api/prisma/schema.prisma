@@ -198,8 +198,9 @@ model Plan {
   hasPrioritySupport Boolean  @default(false)
 
   // Stripe integration
-  stripeProductId String? @unique
-  stripePriceId   String? @unique
+  stripeProductId  String?
+  stripePriceId    String? @unique
+  stripeLookupKey  String? @unique // lookup_key para buscar preço no Stripe
 
   subscriptions Subscription[]
 
