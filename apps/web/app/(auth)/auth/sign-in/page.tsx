@@ -1,20 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { Box } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 
 import {
   AuthContainer,
-  AuthTabs,
-  AuthTabPanel,
   SignInForm,
 } from "@/app/features/auth/sign-in/components";
 import { useSignInForm } from "@/app/features/auth/sign-in/hooks";
-import { UserType } from "@/app/features/auth/sign-in/types";
 
+/**
+ * Página de signin unificada
+ * O tipo de usuário (candidato ou empresa) é detectado automaticamente pelo backend pelo email
+ */
 const AuthSignInPage = () => {
-  const [userType, setUserType] = useState<UserType>(UserType.CANDIDATE);
-
   const {
     form,
     onSubmit,
@@ -22,42 +20,26 @@ const AuthSignInPage = () => {
     errorMessage,
     successMessage,
     requiresTwoFactor,
-  } = useSignInForm({ userType });
-
-  const handleTabChange = (newUserType: UserType) => {
-    setUserType(newUserType);
-  };
+  } = useSignInForm();
 
   return (
     <AuthContainer>
-      <AuthTabs value={userType} onChange={handleTabChange}>
-        <AuthTabPanel value={UserType.CANDIDATE}>
-          <Box>
-            <SignInForm
-              form={form}
-              onSubmit={onSubmit}
-              userType={UserType.CANDIDATE}
-              isLoading={isLoading}
-              errorMessage={errorMessage}
-              successMessage={successMessage}
-              requiresTwoFactor={requiresTwoFactor}
-            />
-          </Box>
-        </AuthTabPanel>
-        <AuthTabPanel value={UserType.COMPANY}>
-          <Box>
-            <SignInForm
-              form={form}
-              onSubmit={onSubmit}
-              userType={UserType.COMPANY}
-              isLoading={isLoading}
-              errorMessage={errorMessage}
-              successMessage={successMessage}
-              requiresTwoFactor={requiresTwoFactor}
-            />
-          </Box>
-        </AuthTabPanel>
-      </AuthTabs>
+      <Box className="p-6">
+        <Typography variant="h5" className="text-center mb-4 font-semibold">
+          Entrar
+        </Typography>
+        <Typography variant="body2" className="text-center text-gray-600 mb-6">
+          Entre com sua conta de candidato ou empresa
+        </Typography>
+        <SignInForm
+          form={form}
+          onSubmit={onSubmit}
+          isLoading={isLoading}
+          errorMessage={errorMessage}
+          successMessage={successMessage}
+          requiresTwoFactor={requiresTwoFactor}
+        />
+      </Box>
     </AuthContainer>
   );
 };
