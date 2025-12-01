@@ -238,14 +238,15 @@ Total estimado: ~R$ 682.550/mês
 ### RF01 - Autenticação e Autorização
 
 - [x] RF01.1 - Cadastro de usuário com email/senha
-- [x] RF01.2 - Login com email/senha
-- [x] RF01.2 - Instegração com Stripe
-- [ ] RF01.3 - Autenticação de dois fatores (2FA)
-- [ ] RF01.4 - Recuperação de senha por email
-- [ ] RF01.5 - Refresh token automático
-- [ ] RF01.6 - Logout com invalidação de token
-- [ ] RF01.7 - Sistema de roles (OWNER, ADMIN, MANAGER, MEMBER, VIEWER)
-- [ ] RF01.8 - Permissões granulares por módulo
+- [x] RF01.2 - Login com email/senha [Tenant Automatico]
+- [x] RF01.3 - Integração com Stripe
+- [ ] RF01.4 - Autenticação de dois fatores (2FA)
+- [x] RF01.5 - Reset de senha por email
+- [x] RF01.6 - Redefinir senha
+- [ ] RF01.7 - Refresh token automático
+- [ ] RF01.8 - Logout com invalidação de token
+- [ ] RF01.9 - Sistema de roles (OWNER, ADMIN, MANAGER, MEMBER, VIEWER)
+- [ ] RF01.10 - Permissões granulares por módulo
 
 ### RF02 - Gestão de Perfil (Profile)
 
