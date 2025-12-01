@@ -12,7 +12,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AuthController } from '@/auth/auth.controller';
 import { AuthService } from '@/auth/services/auth.service';
-import { SignupService } from '@/auth/services/signup.service';
+import { SignupCheckoutService } from '@/auth/services/signup-checkout.service';
 import { JwtAuthGuard } from '@/libs/common/guards/jwt-auth.guard';
 
 describe('Auth (e2e)', () => {
@@ -29,8 +29,10 @@ describe('Auth (e2e)', () => {
     getProfileWithPlan: vi.fn(),
   };
 
-  const mockSignupService = {
-    signup: vi.fn(),
+  const mockSignupCheckoutService = {
+    signupCandidate: vi.fn(),
+    signupCompany: vi.fn(),
+    handleCheckoutCompleted: vi.fn(),
   };
 
   const mockJwtAuthGuard = {
@@ -46,7 +48,7 @@ describe('Auth (e2e)', () => {
       controllers: [AuthController],
       providers: [
         { provide: AuthService, useValue: mockAuthService },
-        { provide: SignupService, useValue: mockSignupService },
+        { provide: SignupCheckoutService, useValue: mockSignupCheckoutService },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -118,10 +120,54 @@ describe('Auth (e2e)', () => {
     });
   });
 
-  describe('/auth/signup (POST)', () => {
+  describe('/auth/signup/candidate (POST)', () => {
     it('should return 400 for missing required fields', async () => {
       const response = await request(app.getHttpServer())
-        .post('/auth/signup')
+        .post('/auth/signup/candidate')
+        .send({
+          name: 'Test User',
+        });
+
+      expect(response.status).toBe(400);
+    });
+
+    it('should validate email format', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/signup/candidate')
+        .send({
+          name: 'Test User',
+          email: 'invalid-email',
+          plan: 'FREE',
+        });
+
+      expect(response.status).toBe(400);
+    });
+
+    it('should call signupCandidate service with valid data', async () => {
+      mockSignupCheckoutService.signupCandidate.mockResolvedValue({
+        success: true,
+        message: 'Account created',
+        plan: { id: '1', name: 'FREE', price: 0, currency: 'BRL' },
+        isFree: true,
+      });
+
+      const response = await request(app.getHttpServer())
+        .post('/auth/signup/candidate')
+        .send({
+          name: 'Test User',
+          email: 'test@example.com',
+          plan: 'FREE',
+        });
+
+      expect(response.status).toBe(201);
+      expect(mockSignupCheckoutService.signupCandidate).toHaveBeenCalled();
+    });
+  });
+
+  describe('/auth/signup/company (POST)', () => {
+    it('should return 400 for missing required fields', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/signup/company')
         .send({
           companyName: 'Test Company',
         });
@@ -131,38 +177,44 @@ describe('Auth (e2e)', () => {
 
     it('should validate email format', async () => {
       const response = await request(app.getHttpServer())
-        .post('/auth/signup')
+        .post('/auth/signup/company')
         .send({
           companyName: 'Test Company',
           domain: 'test-company',
           contactName: 'Test User',
           contactEmail: 'invalid-email',
-          plan: 'STARTER',
+          plan: 'STARTUP',
         });
 
       expect(response.status).toBe(400);
     });
 
-    it('should call signup service with valid data', async () => {
-      mockSignupService.signup.mockResolvedValue({
+    it('should call signupCompany service with valid data', async () => {
+      mockSignupCheckoutService.signupCompany.mockResolvedValue({
         success: true,
-        message: 'Company created',
-        tenantId: 'new-tenant-id',
-        plan: { id: '1', name: 'STARTER', price: 0, currency: 'BRL' },
+        message: 'Redirecting to checkout...',
+        checkoutUrl: 'https://checkout.stripe.com/test',
+        plan: {
+          id: '1',
+          name: 'STARTUP',
+          price: 299,
+          currency: 'BRL',
+          billingPeriodDays: 30,
+        },
       });
 
       const response = await request(app.getHttpServer())
-        .post('/auth/signup')
+        .post('/auth/signup/company')
         .send({
           companyName: 'Test Company',
           domain: 'test-company',
           contactName: 'Test User',
           contactEmail: 'test@example.com',
-          plan: 'STARTER',
+          plan: 'STARTUP',
         });
 
       expect(response.status).toBe(201);
-      expect(mockSignupService.signup).toHaveBeenCalled();
+      expect(mockSignupCheckoutService.signupCompany).toHaveBeenCalled();
     });
   });
 
