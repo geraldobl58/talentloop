@@ -242,17 +242,18 @@ describe('AuthService', () => {
   describe('forgotPassword', () => {
     it('should send password reset email', async () => {
       const expectedResult = {
+        success: true,
         message:
           'Se o email existir em nossa base, você receberá instruções para redefinir sua senha.',
       };
       mockPasswordService.forgotPassword.mockResolvedValue(expectedResult);
 
-      const result = await service.forgotPassword(
-        'test@example.com',
-        'tenant-123',
-      );
+      const result = await service.forgotPassword('test@example.com');
 
       expect(result).toEqual(expectedResult);
+      expect(mockPasswordService.forgotPassword).toHaveBeenCalledWith(
+        'test@example.com',
+      );
     });
   });
 
