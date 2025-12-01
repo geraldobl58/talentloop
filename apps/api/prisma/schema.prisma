@@ -182,11 +182,13 @@ model Plan {
   currency    String  @default("BRL")
   description String?
 
+  // Billing Configuration
+  billingPeriodDays Int @default(30) // Duração do período de cobrança em dias (30 = mensal)
+
   // Resource Limits (Business Logic)
   maxUsers           Int?
   maxContacts        Int?
   hasAPI             Boolean @default(false)
-  trialDurationHours Int?    @default(168) // 7 dias em horas
 
   // TalentLoop Specific Limits
   maxJobsPerDay      Int?     @default(50)   // Vagas capturadas por dia

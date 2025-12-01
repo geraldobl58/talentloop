@@ -338,7 +338,7 @@ async function main() {
       maxUsers: 1,
       maxContacts: 10,
       hasAPI: false,
-      trialDurationHours: null, // Não tem trial, é grátis para sempre
+      billingPeriodDays: 0, // Grátis para sempre
       maxJobsPerDay: 100,
       maxApplicationsPerDay: 10,
       maxAutoApplyPerDay: 0,
@@ -362,7 +362,7 @@ async function main() {
       maxUsers: 1,
       maxContacts: 100,
       hasAPI: false,
-      trialDurationHours: 168, // 7 dias de trial
+      billingPeriodDays: 30, // Mensal
       maxJobsPerDay: null, // Ilimitado
       maxApplicationsPerDay: 50,
       maxAutoApplyPerDay: 10,
@@ -386,7 +386,7 @@ async function main() {
       maxUsers: 1,
       maxContacts: null, // Ilimitado
       hasAPI: true,
-      trialDurationHours: 168, // 7 dias de trial
+      billingPeriodDays: 30, // Mensal
       maxJobsPerDay: null, // Ilimitado
       maxApplicationsPerDay: null, // Ilimitado
       maxAutoApplyPerDay: 30,
@@ -413,7 +413,7 @@ async function main() {
       maxUsers: 5,
       maxContacts: 500,
       hasAPI: false,
-      trialDurationHours: 336, // 14 dias de trial
+      billingPeriodDays: 30, // Mensal
       maxJobsPerDay: 100,
       maxApplicationsPerDay: null, // N/A para empresas
       maxAutoApplyPerDay: null, // N/A para empresas
@@ -437,7 +437,7 @@ async function main() {
       maxUsers: 20,
       maxContacts: 2000,
       hasAPI: true,
-      trialDurationHours: 336, // 14 dias de trial
+      billingPeriodDays: 30, // Mensal
       maxJobsPerDay: null, // Ilimitado
       maxApplicationsPerDay: null,
       maxAutoApplyPerDay: null,
@@ -461,7 +461,7 @@ async function main() {
       maxUsers: null, // Ilimitado
       maxContacts: null, // Ilimitado
       hasAPI: true,
-      trialDurationHours: null, // Sem trial - contato comercial
+      billingPeriodDays: 30, // Mensal (ou customizado via contrato)
       maxJobsPerDay: null,
       maxApplicationsPerDay: null,
       maxAutoApplyPerDay: null,
@@ -475,74 +475,6 @@ async function main() {
     },
   });
   console.log('✅ Created ENTERPRISE plan:', enterprisePlan.id);
-
-  // Legacy plans for compatibility
-  const trialPlan = await prisma.plan.create({
-    data: {
-      name: 'TRIAL',
-      price: 0,
-      currency: 'BRL',
-      description: 'Experimente grátis por 7 dias (legado)',
-      maxUsers: 1,
-      maxContacts: 10,
-      hasAPI: false,
-      trialDurationHours: 168, // 7 dias
-      maxJobsPerDay: 20,
-      maxApplicationsPerDay: 5,
-      maxAutoApplyPerDay: 0,
-      hasAIMatching: false,
-      hasAutoApply: false,
-      hasRecruiterCRM: false,
-      hasPrioritySupport: false,
-      stripeProductId: null,
-      stripePriceId: null,
-    },
-  });
-  console.log('✅ Created TRIAL plan (legacy):', trialPlan.id);
-
-  const starterPlan = await prisma.plan.create({
-    data: {
-      name: 'STARTER',
-      price: 149.99,
-      currency: 'BRL',
-      description: 'Perfeito para começar sua busca (legado)',
-      maxUsers: 1,
-      maxContacts: 50,
-      hasAPI: false,
-      maxJobsPerDay: 50,
-      maxApplicationsPerDay: 20,
-      maxAutoApplyPerDay: 5,
-      hasAIMatching: true,
-      hasAutoApply: false,
-      hasRecruiterCRM: false,
-      hasPrioritySupport: false,
-      stripeProductId: 'prod_TClbVFQhJS1ZOD',
-      stripePriceId: 'price_1SGM3uAB7ykXDk2oUJravQQK',
-    },
-  });
-  console.log('✅ Created STARTER plan (legacy):', starterPlan.id);
-
-  const professionalPlan = await prisma.plan.create({
-    data: {
-      name: 'PROFESSIONAL',
-      price: 299.99,
-      currency: 'BRL',
-      description: 'Para quem quer acelerar a carreira (legado)',
-      maxUsers: 1,
-      maxContacts: 200,
-      hasAPI: true,
-      maxJobsPerDay: 100,
-      maxApplicationsPerDay: 50,
-      maxAutoApplyPerDay: 20,
-      hasAIMatching: true,
-      hasAutoApply: true,
-      hasRecruiterCRM: true,
-      hasPrioritySupport: false,
-      stripeProductId: 'prod_TClbELPL9wiScE',
-      stripePriceId: 'price_1SGM4CAB7ykXDk2ow5PfFVyb',
-    },
-  });
-  console.log('✅ Created PROFESSIONAL plan (legacy):', professionalPlan.id);
 
   // ============================
   // Create Test Tenants & Users
@@ -657,14 +589,14 @@ async function main() {
     },
   });
 
-  // Subscription for candidates tenant (Trial)
+  // Subscription for candidates tenant (FREE plan)
   const candidatesSubscription = await prisma.subscription.create({
     data: {
       tenantId: candidatesTenant.id,
-      planId: trialPlan.id,
+      planId: freePlan.id,
       status: 'ACTIVE',
       startedAt: new Date(),
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days trial
+      expiresAt: null, // Free plan doesn't expire
       stripeCustomerId: null,
       stripeSubscriptionId: null,
     },
@@ -737,12 +669,12 @@ async function main() {
   const subscription1 = await prisma.subscription.create({
     data: {
       tenantId: tenant1.id,
-      planId: professionalPlan.id,
+      planId: businessPlan.id,
       status: 'ACTIVE',
       startedAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000), // 90 days ago
-      expiresAt: new Date(Date.now() + 275 * 24 * 60 * 60 * 1000), // 275 days from now
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now (monthly)
       stripeCustomerId: 'cus_test_startup',
-      stripeSubscriptionId: 'sub_test_startup_prof',
+      stripeSubscriptionId: 'sub_test_startup_business',
     },
   });
   console.log('✅ Created Subscription 1 (Tech Startup):', subscription1.id);
@@ -783,12 +715,12 @@ async function main() {
   const subscription2 = await prisma.subscription.create({
     data: {
       tenantId: tenant2.id,
-      planId: starterPlan.id,
+      planId: startupPlan.id,
       status: 'ACTIVE',
       startedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
-      expiresAt: new Date(Date.now() + 335 * 24 * 60 * 60 * 1000), // 335 days from now
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now (monthly)
       stripeCustomerId: 'cus_test_agency',
-      stripeSubscriptionId: 'sub_test_agency_starter',
+      stripeSubscriptionId: 'sub_test_agency_startup',
     },
   });
   console.log('✅ Created Subscription 2 (Digital Agency):', subscription2.id);
@@ -900,12 +832,12 @@ async function main() {
   const subscription4 = await prisma.subscription.create({
     data: {
       tenantId: tenant4.id,
-      planId: starterPlan.id,
+      planId: startupPlan.id,
       status: 'PAST_DUE',
       startedAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000), // 90 days ago
       expiresAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // expired 30 days ago
       stripeCustomerId: 'cus_test_overdue',
-      stripeSubscriptionId: 'sub_test_overdue_starter',
+      stripeSubscriptionId: 'sub_test_overdue_startup',
     },
   });
   console.log(
@@ -949,7 +881,7 @@ async function main() {
   const subscription5 = await prisma.subscription.create({
     data: {
       tenantId: tenant5.id,
-      planId: professionalPlan.id,
+      planId: businessPlan.id,
       status: 'CANCELED',
       startedAt: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000), // 180 days ago
       canceledAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000), // canceled 60 days ago
