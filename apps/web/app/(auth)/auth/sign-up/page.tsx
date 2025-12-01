@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { Box, Typography, Chip } from "@mui/material";
+import { Box, Typography, Chip, CircularProgress } from "@mui/material";
 
 import {
   AuthContainer,
@@ -23,7 +23,7 @@ import {
   CompanySignUpForm,
 } from "@/app/features/auth/sign-up/components/sign-up-form";
 
-const SignUpPage = () => {
+const SignUpContent = () => {
   const searchParams = useSearchParams();
 
   // Parse URL params
@@ -97,6 +97,25 @@ const SignUpPage = () => {
         </AuthTabPanel>
       </AuthTabs>
     </AuthContainer>
+  );
+};
+
+const SignUpPage = () => {
+  return (
+    <Suspense
+      fallback={
+        <AuthContainer
+          title="Criação de Conta"
+          subtitle="Insira seus dados para criar uma nova conta"
+        >
+          <Box display="flex" justifyContent="center" py={4}>
+            <CircularProgress />
+          </Box>
+        </AuthContainer>
+      }
+    >
+      <SignUpContent />
+    </Suspense>
   );
 };
 
