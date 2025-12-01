@@ -199,7 +199,8 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Request password reset',
-    description: 'Sends a password reset email to the user',
+    description:
+      'Sends a password reset email to the user. The system automatically detects the tenant by email.',
   })
   @ApiBody({ type: ForgotPasswordDto })
   @ApiResponse({
@@ -207,7 +208,7 @@ export class AuthController {
     description: 'Password reset email sent (if user exists)',
   })
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
-    return this.service.forgotPassword(dto.email, dto.tenantId);
+    return this.service.forgotPassword(dto.email);
   }
 
   @Post('reset-password')
