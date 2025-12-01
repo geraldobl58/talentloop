@@ -28,7 +28,9 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    "**/*.mts",
+    "app/providers/index.ts.old",
+    "app/features/auth/sign-up/components/index.ts.old"
   ],
   "exclude": ["node_modules"]
 }

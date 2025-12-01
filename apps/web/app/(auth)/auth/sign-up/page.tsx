@@ -11,18 +11,17 @@ import {
   AuthTabs,
 } from "@/app/features/auth/sign-in/components";
 
-import { UserType } from "@/app/features/auth/sign-up/types";
-import {
-  CandidateSignUpForm,
-  CompanySignUpForm,
-  getPlanByValue,
-  formatPrice,
-  PlanType,
-} from "@/app/features/auth/sign-up/components";
+import { PlanType, UserType } from "@/app/features/auth/sign-up/types";
+
 import {
   useSignUpCandidateForm,
   useSignUpCompanyForm,
 } from "@/app/features/auth/sign-up/hooks";
+import { formatPrice, getPlanByValue } from "@/app/libs/plans-data";
+import {
+  CandidateSignUpForm,
+  CompanySignUpForm,
+} from "@/app/features/auth/sign-up/components/sign-up-form";
 
 const SignUpPage = () => {
   const searchParams = useSearchParams();
@@ -64,20 +63,10 @@ const SignUpPage = () => {
                 </Typography>
               </Box>
             }
-            color="primary"
+            color="secondary"
             variant="outlined"
             sx={{ px: 2, py: 2.5 }}
           />
-          {planData.isTrial && planData.trialDays && (
-            <Typography
-              variant="caption"
-              color="success.main"
-              display="block"
-              mt={1}
-            >
-              🎁 {planData.trialDays} dias de teste grátis incluídos!
-            </Typography>
-          )}
         </Box>
       )}
 

@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
-import { EmotionRegistry, ThemeProvider } from "@/components/providers";
 
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 import "./globals.css";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClientProvider } from "./providers/query-provider";
+import { EmotionRegistry } from "./providers/emotion-registry";
+import { ThemeProvider } from "./providers/theme-provider";
 
 const montserrat = Montserrat({
   variable: "--font-montserrat-sans",
