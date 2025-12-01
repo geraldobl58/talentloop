@@ -20,11 +20,12 @@ import {
 import { TwoFactorService } from '../services/two-factor.service';
 import { EnableTwoFactorDto } from './dto/enable-two-factor.dto';
 import { VerifyTwoFactorDto } from './dto/verify-two-factor.dto';
+import { TenantIsolationGuard } from '@/libs/common/guards/tenant-isolation.guard';
 
 @ApiTags('Authentication')
 @ApiBearerAuth()
 @Controller('auth/2fa')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), TenantIsolationGuard)
 export class TwoFactorController {
   constructor(private readonly twoFactorService: TwoFactorService) {}
 
