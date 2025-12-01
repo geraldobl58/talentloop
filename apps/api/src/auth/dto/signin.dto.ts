@@ -11,7 +11,7 @@ import {
 
 export class SignInDto {
   @IsEmail()
-  @ApiProperty({ example: 'janedoe@email.com' })
+  @ApiProperty({ example: 'carlos@digitalagency.com' })
   email: string;
 
   @IsString()
@@ -25,7 +25,7 @@ export class SignInDto {
     minSymbols: 1,
   })
   @ApiProperty({
-    example: 'Jane@123',
+    example: 'SenhaForte123!@#',
     description:
       'Password must contain at least 1 uppercase, 1 lowercase, 1 number, and 1 symbol. Length: 6-20 chars.',
     minLength: 6,
@@ -36,7 +36,7 @@ export class SignInDto {
   @IsOptional()
   @IsString()
   @ApiProperty({
-    example: 'tenant-id-or-slug ex: jane-doe',
+    example: 'digital-agency',
     description:
       'Tenant ID or slug for multi-tenant sign in. Optional for candidates (defaults to "candidates")',
     required: false,
