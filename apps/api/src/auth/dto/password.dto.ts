@@ -1,6 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
 
+/**
+ * DTO para solicitar reset de senha
+ * O tenant é detectado automaticamente pelo email
+ */
 export class ForgotPasswordDto {
   @ApiProperty({
     description: 'Email do usuário',
@@ -9,14 +13,6 @@ export class ForgotPasswordDto {
   @IsEmail({}, { message: 'Email inválido' })
   @IsNotEmpty({ message: 'Email é obrigatório' })
   email: string;
-
-  @ApiProperty({
-    description: 'Tenant ID ou Slug',
-    example: 'empresa-demo',
-  })
-  @IsString({ message: 'Tenant ID deve ser uma string' })
-  @IsNotEmpty({ message: 'Tenant ID é obrigatório' })
-  tenantId: string;
 }
 
 export class ResetPasswordDto {
