@@ -86,13 +86,13 @@ export async function signUpCandidateAction(
       };
     }
 
-    // Plano FREE ou trial - retorna token para login automático
+    // Plano FREE - retorna token para login automático
     if (response.token) {
       return {
         success: true,
         message: "Conta criada com sucesso!",
         token: response.token,
-        isTrial: response.isTrial,
+        isFree: response.isFree,
       };
     }
 
@@ -183,13 +183,12 @@ export async function signUpCompanyAction(
       };
     }
 
-    // Trial - retorna token para login automático
-    if (response.isTrial && response.token) {
+    // Token retornado - login automático
+    if (response.token) {
       return {
         success: true,
-        message: "Conta criada com sucesso! Período de teste iniciado.",
+        message: "Conta criada com sucesso!",
         token: response.token,
-        isTrial: true,
         tenantSlug: response.tenant?.slug,
       };
     }
