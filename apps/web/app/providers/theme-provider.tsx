@@ -2,7 +2,7 @@
 
 import { useState, useMemo, createContext, useContext, ReactNode } from "react";
 import { ThemeProvider as MUIThemeProvider, CssBaseline } from "@mui/material";
-import { lightTheme, darkTheme } from "@/lib/theme";
+import { lightTheme, darkTheme } from "@/app/libs/theme";
 
 type ThemeMode = "light" | "dark";
 
