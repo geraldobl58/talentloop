@@ -1,7 +1,7 @@
 export * from "./user-type";
 
-// Tenant types from backend
-export type TenantType = "CANDIDATE" | "COMPANY";
+// Re-export TenantType from shared
+export type { TenantType } from "@/app/shared/types";
 
 export interface SignInRequest {
   email: string;
@@ -16,7 +16,7 @@ export interface SignInRequest {
 export interface SignInApiResponse {
   access_token?: string;
   requiresTwoFactor: boolean;
-  tenantType?: TenantType; // Type returned from API
+  tenantType?: "CANDIDATE" | "COMPANY";
   userId?: string;
   user?: {
     id: string;
@@ -34,7 +34,7 @@ export interface SignInResponse {
   message?: string;
   token?: string;
   requiresTwoFactor: boolean;
-  tenantType?: TenantType; // Type for dashboard routing
+  tenantType?: "CANDIDATE" | "COMPANY";
   userId?: string;
   user?: {
     id: string;
