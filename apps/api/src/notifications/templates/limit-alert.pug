@@ -3,23 +3,165 @@ html(lang="pt-BR")
   head
     meta(charset="UTF-8")
     meta(name="viewport" content="width=device-width, initial-scale=1.0")
-    title Alerta de Limite - talenntloop
-    style
-      include ./styles/base.css
-      include ./styles/alert.css
+    title Alerta de Limite - TalentLoop
+    style.
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 40px 20px;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px 30px;
+        text-align: center;
+      }
+      .header h1 {
+        font-size: 28px;
+        margin-bottom: 8px;
+      }
+      .header p {
+        opacity: 0.9;
+        font-size: 16px;
+      }
+      .content {
+        padding: 40px 30px;
+      }
+      .content > p {
+        color: #333;
+        font-size: 16px;
+        line-height: 1.6;
+        margin-bottom: 16px;
+      }
+      .usage-box {
+        background: #f8f9ff;
+        border: 2px solid #667eea;
+        border-radius: 12px;
+        padding: 25px;
+        margin: 25px 0;
+        text-align: center;
+      }
+      .usage-box h3 {
+        color: #1a1a2e;
+        font-size: 18px;
+        margin-bottom: 20px;
+      }
+      .usage-stat {
+        margin-bottom: 15px;
+      }
+      .stat-label {
+        color: #666;
+        font-size: 14px;
+        margin-bottom: 5px;
+      }
+      .stat-value {
+        color: #667eea;
+        font-size: 28px;
+        font-weight: 700;
+      }
+      .progress-bar {
+        background: #e0e0e0;
+        border-radius: 10px;
+        height: 12px;
+        overflow: hidden;
+        margin: 15px 0;
+      }
+      .progress-fill {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.3s ease;
+      }
+      .usage-percentage {
+        color: #667eea;
+        font-weight: 600;
+        font-size: 16px;
+      }
+      .benefits-box {
+        background: #f8f9ff;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 25px 0;
+      }
+      .benefits-box h4 {
+        color: #1a1a2e;
+        font-size: 16px;
+        margin-bottom: 15px;
+      }
+      .benefits-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .benefits-list li {
+        padding: 8px 0;
+        color: #333;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      .cta-button {
+        text-align: center;
+        margin: 30px 0;
+      }
+      .cta-button a {
+        display: inline-block;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-decoration: none;
+        padding: 16px 40px;
+        border-radius: 30px;
+        font-size: 16px;
+        font-weight: 600;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      .cta-button a:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+      }
+      .footer {
+        background: #f8f9fa;
+        padding: 30px;
+        text-align: center;
+        border-top: 1px solid #e9ecef;
+      }
+      .footer p {
+        color: #666;
+        font-size: 14px;
+        margin-bottom: 8px;
+      }
+      .footer a {
+        color: #667eea;
+        text-decoration: none;
+      }
 
   body
     .container
-      .header.header-warning
+      .header
         h1 ⚠️ Alerta de Limite
         p #{companyName}
 
       .content
-        p Olá 
+        p
+          | Olá 
           strong #{contactName}
           |,
 
-        p Você está próximo do limite do seu plano 
+        p
+          | Você está próximo do limite do seu plano 
           strong #{planName}
           |.
 
@@ -28,33 +170,25 @@ html(lang="pt-BR")
           .usage-stat
             .stat-label #{limitType}
             .stat-value #{currentUsage} / #{maxLimit}
-          
           .progress-bar
             .progress-fill(style=`width: ${percentageUsed}%`)
-          
           .usage-percentage #{Math.round(percentageUsed)}% utilizado
 
         p Para continuar aproveitando todos os recursos sem interrupções, considere fazer upgrade do seu plano.
 
         .cta-button
-          a(href="https://talenntloop.com/dashboard/settings?tab=planos") 🚀 Fazer Upgrade
+          a(href="https://talentloop.com/dashboard/settings?tab=planos") 🚀 Fazer Upgrade
 
         .benefits-box
           h4 ✨ Benefícios do Upgrade
           ul.benefits-list
-            li Mais #{limitType} para gerenciar
-            li Recursos avançados
-            li Suporte prioritário
-            li Acesso completo à API
+            li ✅ Mais #{limitType} para gerenciar
+            li ✅ Recursos avançados
+            li ✅ Suporte prioritário
+            li ✅ Acesso completo à API
 
       .footer
-        p Atenciosamente,
-        strong Equipe talenntloop
-        
-        hr
-        
-        p Este é um email automático. Por favor, não responda.
-        .footer-links
-          a(href="mailto:suporte@talenntloop.com") 📧 Suporte
-          span |
-          a(href="https://talenntloop.com") 🌐 Website
+        p Equipe TalentLoop
+        p
+          a(href="mailto:suporte@talentloop.com") suporte@talentloop.com
+        p © 2025 TalentLoop. Todos os direitos reservados.
