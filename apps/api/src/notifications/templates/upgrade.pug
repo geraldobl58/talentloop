@@ -3,71 +3,218 @@ html(lang="pt-BR")
   head
     meta(charset="UTF-8")
     meta(name="viewport" content="width=device-width, initial-scale=1.0")
-    title Plano Atualizado - talenntloop
-    style
-      include ./styles/base.css
-      include ./styles/upgrade.css
+    title Plano Atualizado - TalentLoop
+    style.
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 40px 20px;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px 30px;
+        text-align: center;
+      }
+      .header h1 {
+        font-size: 28px;
+        margin-bottom: 8px;
+      }
+      .header p {
+        opacity: 0.9;
+        font-size: 16px;
+      }
+      .content {
+        padding: 40px 30px;
+      }
+      .content > p {
+        color: #333;
+        font-size: 16px;
+        line-height: 1.6;
+        margin-bottom: 16px;
+      }
+      .plan-box {
+        background: #f8f9ff;
+        border: 2px solid #667eea;
+        border-radius: 12px;
+        padding: 25px;
+        margin: 25px 0;
+      }
+      .plan-box h3 {
+        color: #1a1a2e;
+        font-size: 18px;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+      .plan-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #e0e0e0;
+      }
+      .plan-row:last-child {
+        border-bottom: none;
+      }
+      .plan-label {
+        color: #666;
+        font-weight: 500;
+      }
+      .plan-value {
+        font-family: 'Monaco', 'Menlo', monospace;
+        background: #fff;
+        padding: 8px 12px;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+        color: #333;
+      }
+      .plan-value.old {
+        background: #f3f4f6;
+        color: #9ca3af;
+        text-decoration: line-through;
+      }
+      .plan-value.new {
+        background: #dbeafe;
+        border-color: #3b82f6;
+        color: #1e40af;
+        font-weight: 600;
+      }
+      .plan-value.price {
+        background: #d1fae5;
+        border-color: #10b981;
+        color: #065f46;
+        font-weight: 600;
+      }
+      .features-list {
+        list-style: none;
+        padding: 0;
+        margin: 15px 0 0 0;
+      }
+      .features-list li {
+        padding: 8px 0;
+        color: #333;
+        font-size: 14px;
+      }
+      .next-steps-box {
+        background: #f8f9ff;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 25px 0;
+      }
+      .next-steps-box h4 {
+        color: #1a1a2e;
+        font-size: 16px;
+        margin-bottom: 15px;
+      }
+      .steps-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .steps-list li {
+        padding: 8px 0;
+        color: #333;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      .support-box {
+        text-align: center;
+        padding: 20px;
+        background: #fff7ed;
+        border: 1px solid #fdba74;
+        border-radius: 8px;
+        margin: 25px 0;
+      }
+      .support-box p {
+        color: #9a3412;
+        font-size: 14px;
+        margin-bottom: 10px;
+      }
+      .support-box a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+      }
+      .footer {
+        background: #f8f9fa;
+        padding: 30px;
+        text-align: center;
+        border-top: 1px solid #e9ecef;
+      }
+      .footer p {
+        color: #666;
+        font-size: 14px;
+        margin-bottom: 8px;
+      }
+      .footer a {
+        color: #667eea;
+        text-decoration: none;
+      }
 
   body
     .container
-      .header.header-success
+      .header
         h1 🚀 Plano Atualizado!
         p #{companyName}
 
       .content
-        p Olá 
+        p
+          | Olá 
           strong #{contactName}
           |,
 
-        p Que alegria! Sua assinatura foi atualizada com sucesso. Agora você tem acesso a todos os recursos premium do plano 
+        p
+          | Que alegria! Sua assinatura foi atualizada com sucesso. Agora você tem acesso a todos os recursos premium do plano 
           strong #{newPlanName}
           |.
 
         .plan-box
           h3 📊 Seu Novo Plano
-          
-          .plan-item
-            p.plan-label Plano anterior:
-            p.plan-value.old #{oldPlanName}
-          
-          .plan-item
-            p.plan-label Novo plano:
-            p.plan-value.new #{newPlanName}
-          
-          .plan-item
-            p.plan-label Valor:
-            p.plan-value.price
-              span.currency #{currency}
-              span.amount #{newPlanPrice}
-              span.period  por mês
-          
-          .plan-item
-            p.plan-label Seus novos recursos incluem:
-            ul.features-list
-              li ✅ #{newMaxUsers} usuários
-              li ✅ #{newMaxContacts} contatos
-              if hasAPI
-                li ✅ Acesso completo à API
+          .plan-row
+            span.plan-label Plano anterior:
+            span.plan-value.old #{oldPlanName}
+          .plan-row
+            span.plan-label Novo plano:
+            span.plan-value.new #{newPlanName}
+          .plan-row
+            span.plan-label Valor:
+            span.plan-value.price #{currency} #{newPlanPrice}/mês
+          .plan-row
+            span.plan-label Novos recursos:
+          ul.features-list
+            li ✅ #{newMaxUsers} usuários
+            li ✅ #{newMaxContacts} contatos
+            if hasAPI
+              li ✅ Acesso completo à API
 
         .next-steps-box
           h4 ✨ Próximos Passos
           ul.steps-list
-            li Explore os novos recursos da sua conta
-            li Convidar mais usuários para sua equipe
-            li Integre com suas ferramentas favoritas
-            li Aproveite o suporte prioritário
+            li 🔍 Explore os novos recursos da sua conta
+            li 👥 Convide mais usuários para sua equipe
+            li 🔗 Integre com suas ferramentas favoritas
+            li 💬 Aproveite o suporte prioritário
 
         .support-box
           p Dúvidas sobre suas novas funcionalidades?
-          a(href="mailto:suporte@talenntloop.com") Entre em contato com nosso suporte
+          a(href="mailto:suporte@talentloop.com") Entre em contato com nosso suporte
 
       .footer
-        p Obrigado por escolher talenntloop!
-        
-        hr
-        
-        p © 2025 talenntloop. Todos os direitos reservados.
-        .footer-links
-          a(href="mailto:suporte@talenntloop.com") 📧 Suporte
-          span |
-          a(href="https://talenntloop.com") 🌐 Website
+        p Obrigado por escolher TalentLoop!
+        p
+          a(href="mailto:suporte@talentloop.com") suporte@talentloop.com
+        p © 2025 TalentLoop. Todos os direitos reservados.
