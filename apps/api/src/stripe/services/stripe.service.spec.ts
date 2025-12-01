@@ -210,12 +210,10 @@ describe('StripeService', () => {
     });
 
     it('should throw BadRequestException if webhook secret is missing', async () => {
-      mockConfigService.get.mockReturnValue(null);
-
       const testModule = await Test.createTestingModule({
         providers: [
           StripeService,
-          { provide: ConfigService, useValue: { get: () => null } },
+          { provide: ConfigService, useValue: { get: () => undefined } },
           { provide: StripeRepository, useValue: mockStripeRepository },
           { provide: StripeCustomerService, useValue: mockCustomerService },
           { provide: StripeCheckoutService, useValue: mockCheckoutService },
@@ -227,8 +225,14 @@ describe('StripeService', () => {
         ],
       }).compile();
 
-      // This test verifies that the method checks for webhook secret
-      expect(testModule).toBeDefined();
+      const serviceWithNoSecret = testModule.get<StripeService>(StripeService);
+
+      const payload = Buffer.from('test-payload');
+      const signature = 'test-signature';
+
+      expect(() =>
+        serviceWithNoSecret.constructWebhookEvent(payload, signature),
+      ).toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException on invalid signature', () => {
