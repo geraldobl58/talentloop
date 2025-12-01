@@ -1,8 +1,8 @@
-"use client";
-
 import { Box, Paper, Typography } from "@mui/material";
 
 import { Logo } from "@/app/components/logo";
+import { ArrowBack } from "@mui/icons-material";
+import Link from "next/link";
 
 interface AuthContainerProps {
   children: React.ReactNode;
@@ -18,6 +18,11 @@ export const AuthContainer = ({
   return (
     <Box className="flex flex-col items-center justify-center min-h-screen bg-linear-to-br from-blue-600 via-blue-500 to-purple-600 p-4">
       <Paper elevation={3} sx={{ width: "100%", maxWidth: 580 }}>
+        <Box>
+          <Link href="/" className="absolute">
+            <ArrowBack className="ml-4 mt-8 text-sm text-blue-600 hover:text-blue-800 font-medium" />
+          </Link>
+        </Box>
         <Box className="p-6 sm:p-8">
           <Box className="mb-6 flex flex-col items-center gap-2">
             <Logo />
