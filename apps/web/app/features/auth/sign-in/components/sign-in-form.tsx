@@ -12,22 +12,23 @@ import {
 } from "@mui/material";
 
 import { FormSignInData } from "../schemas";
-import { UserType } from "../types";
 
 interface SignInFormProps {
   form: UseFormReturn<FormSignInData>;
   onSubmit: (values: FormSignInData) => Promise<void>;
-  userType: UserType;
   isLoading?: boolean;
   errorMessage?: string;
   successMessage?: string;
   requiresTwoFactor?: boolean;
 }
 
+/**
+ * Formulário unificado de signin
+ * O tipo de usuário (candidato ou empresa) é detectado automaticamente pelo backend
+ */
 export const SignInForm = ({
   form,
   onSubmit,
-  userType,
   isLoading = false,
   errorMessage,
   successMessage,
@@ -36,8 +37,6 @@ export const SignInForm = ({
   const handleSubmit = async (values: FormSignInData) => {
     await onSubmit(values);
   };
-
-  const showTenantId = userType === UserType.COMPANY;
 
   return (
     <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-2">
@@ -56,30 +55,6 @@ export const SignInForm = ({
             {successMessage}
           </Typography>
         </Box>
-      )}
-
-      {/* Tenant ID Field - Only for Companies */}
-      {showTenantId && (
-        <Controller
-          control={form.control}
-          name="tenantId"
-          render={({ field }) => (
-            <TextField
-              fullWidth
-              type="text"
-              margin="normal"
-              label="ID da Empresa"
-              placeholder="ex: minha-empresa"
-              disabled={isLoading}
-              helperText={
-                form.formState.errors.tenantId?.message ||
-                "Identificador único da sua empresa"
-              }
-              error={!!form.formState.errors.tenantId}
-              {...field}
-            />
-          )}
-        />
       )}
 
       {/* Email Field */}
