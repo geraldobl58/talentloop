@@ -79,7 +79,7 @@ const CompactPlanCard = ({
           <Chip
             label="Grátis"
             size="small"
-            color="success"
+            color="secondary"
             sx={{
               borderTopRightRadius: plan.isPopular ? 0 : 10,
               borderBottomLeftRadius: 10,
