@@ -41,10 +41,10 @@ export class AuthService {
   // ==================== PASSWORD ====================
 
   /**
-   * Forgot password
+   * Forgot password (detecção automática de tenant pelo email)
    */
-  async forgotPassword(email: string, tenantId: string) {
-    return this.passwordService.forgotPassword(email, tenantId);
+  async forgotPassword(email: string) {
+    return this.passwordService.forgotPassword(email);
   }
 
   /**
