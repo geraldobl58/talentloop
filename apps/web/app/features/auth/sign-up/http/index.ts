@@ -63,16 +63,3 @@ export async function signUpCompany(
 
   return response;
 }
-
-// =============================================
-// LEGACY FUNCTION (for backward compatibility)
-// =============================================
-
-/**
- * @deprecated Use signUpCandidate or signUpCompany instead
- */
-export async function signUp(
-  data: CompanySignUpRequest
-): Promise<SignUpResponse> {
-  return signUpCompany(data);
-}
