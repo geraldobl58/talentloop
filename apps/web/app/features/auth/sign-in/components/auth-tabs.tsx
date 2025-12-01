@@ -26,10 +26,12 @@ export const AuthTabs = ({ value, onChange, children }: AuthTabsProps) => {
             <Tab
               label={USER_TYPE_CONFIGS[UserType.CANDIDATE].label}
               value={UserType.CANDIDATE}
+              disabled={UserType.COMPANY === value}
             />
             <Tab
               label={USER_TYPE_CONFIGS[UserType.COMPANY].label}
               value={UserType.COMPANY}
+              disabled={UserType.CANDIDATE === value}
             />
           </TabList>
         </Box>
