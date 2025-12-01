@@ -166,15 +166,6 @@ export const SignInForm = ({
       {/* Sign Up Link */}
       <Box className="flex flex-col items-center gap-1 mt-4">
         <Typography variant="caption" className="text-xs text-gray-600">
-          Ainda não tem uma conta?{" "}
-          <Link
-            href="/auth/sign-up"
-            className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
-          >
-            Fazer Cadastro
-          </Link>
-        </Typography>
-        <Typography variant="caption" className="text-xs text-gray-600">
           Esqueceu sua senha?{" "}
           <Link
             href="/auth/forgot-password"
