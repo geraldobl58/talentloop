@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { useForm, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
 
 import {
   FormSignUpCandidateData,
@@ -18,7 +19,7 @@ import {
   DEFAULT_CANDIDATE_PLAN,
   DEFAULT_COMPANY_PLAN,
 } from "../../../../libs/plans-data";
-import { signUpCandidateAction, signUpCompanyAction } from "../actions";
+import { signUpCandidate, signUpCompany } from "../http";
 
 // =============================================
 // TYPES
@@ -30,7 +31,7 @@ interface UseSignUpFormOptions {
 
 interface CandidateFormReturn {
   form: UseFormReturn<FormSignUpCandidateData>;
-  onSubmit: (values: FormSignUpCandidateData) => Promise<void>;
+  onSubmit: (values: FormSignUpCandidateData) => void;
   isLoading: boolean;
   errorMessage?: string;
   successMessage?: string;
@@ -39,7 +40,7 @@ interface CandidateFormReturn {
 
 interface CompanyFormReturn {
   form: UseFormReturn<FormSignUpCompanyData>;
-  onSubmit: (values: FormSignUpCompanyData) => Promise<void>;
+  onSubmit: (values: FormSignUpCompanyData) => void;
   isLoading: boolean;
   errorMessage?: string;
   successMessage?: string;
@@ -56,10 +57,6 @@ export const useSignUpCandidateForm = (selectedPlan?: PlanType | null) => {
   const router = useRouter();
   const plan = selectedPlan || DEFAULT_CANDIDATE_PLAN;
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | undefined>();
-  const [successMessage, setSuccessMessage] = useState<string | undefined>();
-
   const form = useForm<FormSignUpCandidateData>({
     resolver: zodResolver(formSignUpCandidateSchema),
     defaultValues: {
@@ -68,54 +65,59 @@ export const useSignUpCandidateForm = (selectedPlan?: PlanType | null) => {
     },
   });
 
-  const onSubmit = useCallback(
-    async (values: FormSignUpCandidateData) => {
-      setIsLoading(true);
-      setErrorMessage(undefined);
-      setSuccessMessage(undefined);
-
-      try {
-        // Build FormData with all fields including plan
-        const fd = new FormData();
-        fd.append("name", values.name);
-        fd.append("email", values.email);
-        fd.append("plan", plan);
-
-        const response = await signUpCandidateAction(fd);
-
-        if (response.success) {
-          if (response.checkoutUrl) {
-            setSuccessMessage("Redirecionando para pagamento...");
-            window.location.href = response.checkoutUrl;
-          } else if (response.isFree || response.token) {
-            setSuccessMessage(
-              "Conta criada com sucesso! Verifique seu email para obter suas credenciais."
-            );
-            setTimeout(() => {
-              router.push("/auth/sign-in");
-            }, 2000);
-          }
-        } else {
-          setErrorMessage(
-            response.message || "Erro ao criar conta. Tente novamente."
-          );
+  const mutation = useMutation({
+    mutationFn: async (values: FormSignUpCandidateData) => {
+      return signUpCandidate({
+        name: values.name,
+        email: values.email,
+        plan,
+      });
+    },
+    onSuccess: (response) => {
+      if (response.success) {
+        if (response.checkoutUrl) {
+          window.location.href = response.checkoutUrl;
+        } else if (response.isFree || response.token) {
+          setTimeout(() => {
+            router.push("/auth/sign-in");
+          }, 2000);
         }
-      } catch (error) {
-        console.error("SignUp error:", error);
-        setErrorMessage("Erro inesperado. Tente novamente mais tarde.");
-      } finally {
-        setIsLoading(false);
       }
     },
-    [router, plan]
-  );
+  });
+
+  const onSubmit = (values: FormSignUpCandidateData) => {
+    mutation.mutate(values);
+  };
+
+  // Determine success message
+  const getSuccessMessage = () => {
+    if (mutation.isSuccess && mutation.data?.success) {
+      if (mutation.data.checkoutUrl) {
+        return "Redirecionando para pagamento...";
+      }
+      return "Conta criada com sucesso! Verifique seu email para obter suas credenciais.";
+    }
+    return undefined;
+  };
+
+  // Determine error message
+  const getErrorMessage = () => {
+    if (mutation.isError) {
+      return "Erro inesperado. Tente novamente mais tarde.";
+    }
+    if (mutation.data && !mutation.data.success) {
+      return mutation.data.message || "Erro ao criar conta. Tente novamente.";
+    }
+    return undefined;
+  };
 
   return {
     form,
     onSubmit,
-    isLoading,
-    errorMessage,
-    successMessage,
+    isLoading: mutation.isPending,
+    errorMessage: getErrorMessage(),
+    successMessage: getSuccessMessage(),
     userType: UserType.CANDIDATE as const,
   };
 };
@@ -128,10 +130,6 @@ export const useSignUpCompanyForm = (selectedPlan?: PlanType | null) => {
   const router = useRouter();
   const plan = selectedPlan || DEFAULT_COMPANY_PLAN;
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | undefined>();
-  const [successMessage, setSuccessMessage] = useState<string | undefined>();
-
   const form = useForm<FormSignUpCompanyData>({
     resolver: zodResolver(formSignUpCompanySchema),
     defaultValues: {
@@ -142,56 +140,61 @@ export const useSignUpCompanyForm = (selectedPlan?: PlanType | null) => {
     },
   });
 
-  const onSubmit = useCallback(
-    async (values: FormSignUpCompanyData) => {
-      setIsLoading(true);
-      setErrorMessage(undefined);
-      setSuccessMessage(undefined);
-
-      try {
-        // Build FormData with all fields including plan
-        const fd = new FormData();
-        fd.append("companyName", values.companyName);
-        fd.append("domain", values.domain);
-        fd.append("contactName", values.contactName);
-        fd.append("contactEmail", values.contactEmail);
-        fd.append("plan", plan);
-
-        const response = await signUpCompanyAction(fd);
-
-        if (response.success) {
-          if (response.checkoutUrl) {
-            setSuccessMessage("Redirecionando para pagamento...");
-            window.location.href = response.checkoutUrl;
-          } else if (response.token || response.tenantId) {
-            setSuccessMessage(
-              "Conta criada com sucesso! Verifique seu email para obter suas credenciais."
-            );
-            setTimeout(() => {
-              router.push("/auth/sign-in");
-            }, 2000);
-          }
-        } else {
-          setErrorMessage(
-            response.message || "Erro ao criar conta. Tente novamente."
-          );
+  const mutation = useMutation({
+    mutationFn: async (values: FormSignUpCompanyData) => {
+      return signUpCompany({
+        companyName: values.companyName,
+        domain: values.domain,
+        contactName: values.contactName,
+        contactEmail: values.contactEmail,
+        plan,
+      });
+    },
+    onSuccess: (response) => {
+      if (response.success) {
+        if (response.checkoutUrl) {
+          window.location.href = response.checkoutUrl;
+        } else if (response.token || response.tenantId) {
+          setTimeout(() => {
+            router.push("/auth/sign-in");
+          }, 2000);
         }
-      } catch (error) {
-        console.error("SignUp error:", error);
-        setErrorMessage("Erro inesperado. Tente novamente mais tarde.");
-      } finally {
-        setIsLoading(false);
       }
     },
-    [router, plan]
-  );
+  });
+
+  const onSubmit = (values: FormSignUpCompanyData) => {
+    mutation.mutate(values);
+  };
+
+  // Determine success message
+  const getSuccessMessage = () => {
+    if (mutation.isSuccess && mutation.data?.success) {
+      if (mutation.data.checkoutUrl) {
+        return "Redirecionando para pagamento...";
+      }
+      return "Conta criada com sucesso! Verifique seu email para obter suas credenciais.";
+    }
+    return undefined;
+  };
+
+  // Determine error message
+  const getErrorMessage = () => {
+    if (mutation.isError) {
+      return "Erro inesperado. Tente novamente mais tarde.";
+    }
+    if (mutation.data && !mutation.data.success) {
+      return mutation.data.message || "Erro ao criar conta. Tente novamente.";
+    }
+    return undefined;
+  };
 
   return {
     form,
     onSubmit,
-    isLoading,
-    errorMessage,
-    successMessage,
+    isLoading: mutation.isPending,
+    errorMessage: getErrorMessage(),
+    successMessage: getSuccessMessage(),
     userType: UserType.COMPANY as const,
   };
 };
