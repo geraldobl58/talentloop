@@ -18,8 +18,6 @@ import { TwoFactorRepository } from './repositories/two-factor.repository';
 import { SignInService } from './services/signin.service';
 import { PasswordService } from './services/password.service';
 import { ProfileService } from './services/profile.service';
-import { SignupService } from './services/signup.service';
-import { SignupTenantService } from './services/signup-tenant.service';
 import { SignupCheckoutService } from './services/signup-checkout.service';
 import { TwoFactorService } from './services/two-factor.service';
 import { AuthService } from './services/auth.service';
@@ -66,8 +64,6 @@ import { JwtStrategy } from './jwt.strategy';
     SignInService,
     PasswordService,
     ProfileService,
-    SignupService,
-    SignupTenantService,
     SignupCheckoutService,
     TwoFactorService,
     // Orchestration
@@ -81,8 +77,6 @@ import { JwtStrategy } from './jwt.strategy';
     TwoFactorRepository,
     // Services
     AuthService,
-    SignupService,
-    SignupTenantService,
     SignupCheckoutService,
     TwoFactorService,
     // Strategy

@@ -12,10 +12,8 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthService } from './services/auth.service';
-import { SignupService } from './services/signup.service';
 import { SignupCheckoutService } from './services/signup-checkout.service';
 import { SignInDto } from './dto/signin.dto';
-import { SignupDto, SignupResponseDto } from './dto/signup.dto';
 import {
   SignupCandidateDto,
   SignupCandidateResponseDto,
@@ -51,35 +49,8 @@ import {
 export class AuthController {
   constructor(
     private service: AuthService,
-    private signupService: SignupService,
     private signupCheckoutService: SignupCheckoutService,
   ) {}
-
-  @Post('signup')
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({
-    summary: '[DEPRECATED] Company signup with plan selection',
-    description:
-      'DEPRECATED: Use /auth/signup/company instead. Creates a new tenant (company) with admin user, plan subscription, and optional Stripe integration for paid plans',
-    deprecated: true,
-  })
-  @ApiBody({ type: SignupDto })
-  @ApiResponse({
-    status: 201,
-    description: 'Company successfully created',
-    type: SignupResponseDto,
-  })
-  @ApiResponse({
-    status: 409,
-    description: 'Domain already exists or email already registered',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Selected plan not found',
-  })
-  async signup(@Body() body: SignupDto): Promise<SignupResponseDto> {
-    return await this.signupService.signup(body);
-  }
 
   // =============================================
   // SIGNUP DE CANDIDATO (B2C)
