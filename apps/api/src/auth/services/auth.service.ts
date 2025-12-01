@@ -25,20 +25,10 @@ export class AuthService {
   // ==================== AUTHENTICATION ====================
 
   /**
-   * Sign in
+   * Sign in (detecção automática de tipo pelo email)
    */
-  async signIn(
-    email: string,
-    password: string,
-    tenantId: string,
-    twoFactorToken?: string,
-  ) {
-    return this.signInService.execute(
-      email,
-      password,
-      tenantId,
-      twoFactorToken,
-    );
+  async signIn(email: string, password: string, twoFactorToken?: string) {
+    return this.signInService.execute(email, password, twoFactorToken);
   }
 
   /**

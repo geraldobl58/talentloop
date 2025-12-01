@@ -13,7 +13,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthService } from './services/auth.service';
 import { SignupCheckoutService } from './services/signup-checkout.service';
-import { SignInDto } from './dto/signin.dto';
+import { SignInDto, SignInResponseDto } from './dto/signin.dto';
 import {
   SignupCandidateDto,
   SignupCandidateResponseDto,
@@ -36,6 +36,7 @@ import {
   ApiConsumes,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/libs/common/guards/jwt-auth.guard';
+import { TenantIsolationGuard } from '@/libs/common/guards/tenant-isolation.guard';
 import { SkipThrottle } from '@nestjs/throttler';
 
 import {
@@ -114,36 +115,54 @@ export class AuthController {
     return await this.signupCheckoutService.signupCompany(body);
   }
 
+  // =============================================
+  // SIGNIN UNIFICADO (Detecção automática)
+  // =============================================
+
   @Post('signin')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'User signin',
     description:
-      'Authenticates user and returns JWT access token. If tenantId is not provided, defaults to "candidates" tenant for individual users.',
+      'Authenticates a user. The system automatically detects if the user is a candidate or company employee based on the email address.',
   })
   @ApiBody({ type: SignInDto })
   @ApiResponse({
     status: 200,
     description: 'Signin successful',
+    type: SignInResponseDto,
   })
   @ApiResponse({
     status: 401,
     description: 'Invalid credentials',
   })
-  async signin(@Body() dto: SignInDto) {
-    // Default to "candidates" tenant if not provided (for individual job seekers)
-    const tenantId = dto.tenantId || 'candidates';
-
-    return await this.service.signIn(
+  async signin(@Body() dto: SignInDto): Promise<SignInResponseDto> {
+    const result = await this.service.signIn(
       dto.email,
       dto.password,
-      tenantId,
       dto.twoFactorToken,
     );
+
+    // Quando requer 2FA, tenantType ainda não está disponível
+    if (result.requiresTwoFactor) {
+      return {
+        requiresTwoFactor: true,
+        userId: result.userId,
+        message: result.message,
+        tenantType: 'CANDIDATE', // Placeholder, será atualizado após 2FA
+      };
+    }
+
+    return {
+      requiresTwoFactor: false,
+      access_token: result.access_token,
+      tenantType: result.tenantType as 'CANDIDATE' | 'COMPANY',
+      user: result.user,
+    };
   }
 
   @Get('profile')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, TenantIsolationGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get current user profile',
@@ -211,7 +230,7 @@ export class AuthController {
   }
 
   @Post('change-password')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, TenantIsolationGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -239,7 +258,7 @@ export class AuthController {
   }
 
   @Post('refresh')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, TenantIsolationGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -259,7 +278,7 @@ export class AuthController {
   }
 
   @Post('upload-avatar')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, TenantIsolationGuard)
   @ApiBearerAuth()
   @UseInterceptors(FileInterceptor('avatar'))
   @ApiOperation({
