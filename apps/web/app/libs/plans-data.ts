@@ -219,8 +219,8 @@ export const formatPrice = (
   return price.toLocaleString("pt-BR", {
     style: "currency",
     currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   });
 };
 
