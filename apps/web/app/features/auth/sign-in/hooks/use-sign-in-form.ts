@@ -1,26 +1,24 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
 import { setCookie } from "cookies-next";
+import { HTTPError } from "ky";
 
 import { FormSignInData, formSignInSchema } from "../schemas";
-import { signInAction } from "../actions";
+import { signIn } from "../http";
 import { TenantType } from "../types";
 
 /**
- * Hook para gerenciar o formulário de signin unificado
+ * Hook para gerenciar o formulário de signin unificado com React Query
  * O tipo de usuário (CANDIDATE ou COMPANY) é detectado automaticamente pelo backend
  */
 export const useSignInForm = () => {
   const router = useRouter();
-
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | undefined>();
-  const [successMessage, setSuccessMessage] = useState<string | undefined>();
   const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
 
   const form = useForm<FormSignInData>({
@@ -32,88 +30,89 @@ export const useSignInForm = () => {
     },
   });
 
-  const onSubmit = useCallback(
-    async (values: FormSignInData) => {
-      setIsLoading(true);
-      setErrorMessage(undefined);
-      setSuccessMessage(undefined);
+  const mutation = useMutation({
+    mutationFn: async (values: FormSignInData) => {
+      return signIn({
+        email: values.email,
+        password: values.password,
+        twoFactorToken: values.twoFactorToken,
+      });
+    },
+    onSuccess: (response, variables) => {
+      // Se requer 2FA e ainda não foi enviado o código
+      if (response.requiresTwoFactor && !variables.twoFactorToken) {
+        setRequiresTwoFactor(true);
+        return;
+      }
 
-      try {
-        // Converter valores para FormData para a server action
-        const formData = new FormData();
-        formData.append("email", values.email);
-        formData.append("password", values.password);
-        if (values.twoFactorToken) {
-          formData.append("twoFactorToken", values.twoFactorToken);
-        }
+      // Se 2FA foi verificado com sucesso ou não é necessário, salvar token
+      if (response.token) {
+        // Store token in cookie
+        setCookie("access_token", response.token, {
+          maxAge: 60 * 60 * 24 * 7, // 7 days
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+        });
 
-        const response = await signInAction(formData);
+        // Store tenant type from API
+        const tenantType: TenantType = response.tenantType || "CANDIDATE";
+        setCookie("tenant_type", tenantType, {
+          maxAge: 60 * 60 * 24 * 7, // 7 days
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+        });
 
-        if (response.success) {
-          // Se requer 2FA e ainda não foi enviado o código
-          if (response.requiresTwoFactor && !values.twoFactorToken) {
-            setRequiresTwoFactor(true);
-            setSuccessMessage(
-              "Digite o código de autenticação de dois fatores"
-            );
-            setIsLoading(false);
-            return;
-          }
-
-          // Se 2FA foi verificado com sucesso ou não é necessário, salvar token
-          if (response.token) {
-            // Store token in cookie (for Server Actions and client-side API calls)
-            setCookie("access_token", response.token, {
-              maxAge: 60 * 60 * 24 * 7, // 7 days
-              secure: process.env.NODE_ENV === "production",
-              sameSite: "lax",
-            });
-
-            // Store tenant type from API (CANDIDATE or COMPANY) - this ensures data isolation
-            // The tenantType comes from the server based on the actual tenant in database
-            const tenantType: TenantType = response.tenantType || "CANDIDATE";
-            setCookie("tenant_type", tenantType, {
-              maxAge: 60 * 60 * 24 * 7, // 7 days
-              secure: process.env.NODE_ENV === "production",
-              sameSite: "lax",
-            });
-
-            setSuccessMessage("Login realizado com sucesso! Redirecionando...");
-            setTimeout(() => {
-              router.push("/dashboard");
-            }, 800);
-          }
-        } else {
-          setErrorMessage(
-            response.message || "Erro ao realizar login. Tente novamente."
-          );
-
-          // Display validation errors
-          if (response.errors) {
-            Object.entries(response.errors).forEach(([field, errors]) => {
-              form.setError(field as keyof FormSignInData, {
-                type: "manual",
-                message: errors?.[0] || "Erro de validação",
-              });
-            });
-          }
-        }
-      } catch (error) {
-        console.error("SignIn error:", error);
-        setErrorMessage("Erro inesperado. Tente novamente mais tarde.");
-      } finally {
-        setIsLoading(false);
+        // Redirect to dashboard
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 800);
       }
     },
-    [router, form]
-  );
+    onError: async (error) => {
+      if (error instanceof HTTPError) {
+        const errorData = (await error.response.json().catch(() => ({}))) as {
+          message?: string;
+          errors?: Record<string, string[]>;
+        };
+
+        // Display validation errors
+        if (errorData.errors) {
+          Object.entries(errorData.errors).forEach(([field, errors]) => {
+            form.setError(field as keyof FormSignInData, {
+              type: "manual",
+              message: errors?.[0] || "Erro de validação",
+            });
+          });
+        }
+      }
+    },
+  });
+
+  const onSubmit = async (values: FormSignInData) => {
+    mutation.mutate(values);
+  };
+
+  // Determine success message
+  const getSuccessMessage = () => {
+    if (mutation.isSuccess) {
+      if (requiresTwoFactor && !form.getValues("twoFactorToken")) {
+        return "Digite o código de autenticação de dois fatores";
+      }
+      return "Login realizado com sucesso! Redirecionando...";
+    }
+    return undefined;
+  };
 
   return {
     form,
     onSubmit,
-    isLoading,
-    errorMessage,
-    successMessage,
+    isLoading: mutation.isPending,
+    errorMessage: mutation.error
+      ? mutation.error instanceof HTTPError
+        ? "Erro ao realizar login. Tente novamente."
+        : "Erro inesperado. Tente novamente mais tarde."
+      : undefined,
+    successMessage: getSuccessMessage(),
     requiresTwoFactor,
   };
 };
