@@ -13,6 +13,10 @@ import {
 import { RolesService } from './services/roles.service';
 import { JwtAuthGuard } from '../libs/common/guards/jwt-auth.guard';
 import {
+  TenantIsolationGuard,
+  CompaniesOnly,
+} from '../libs/common/guards/tenant-isolation.guard';
+import {
   GetCurrentUser,
   CurrentUser,
 } from '../libs/common/decorators/current-user-decorator';
@@ -27,7 +31,8 @@ import {
 import { RoleType } from '@prisma/client';
 
 @Controller('roles')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, TenantIsolationGuard, RolesGuard)
+@CompaniesOnly() // Roles management só faz sentido para empresas
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
