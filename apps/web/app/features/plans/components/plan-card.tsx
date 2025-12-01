@@ -77,7 +77,7 @@ export const PlanCard = ({ plan, isSelected, onSelect }: PlanCardProps) => {
             position: "absolute",
             top: 12,
             right: 12,
-            backgroundColor: "success.main",
+            backgroundColor: "secondary.main",
             color: "white",
             px: 1.5,
             py: 0.5,
@@ -117,7 +117,7 @@ export const PlanCard = ({ plan, isSelected, onSelect }: PlanCardProps) => {
         <Typography
           variant="h3"
           fontWeight="bold"
-          color={isFree ? "success.main" : "primary.main"}
+          color={isFree ? "secondary.main" : "primary.main"}
         >
           {formatPrice(plan.price, plan.currency)}
         </Typography>
