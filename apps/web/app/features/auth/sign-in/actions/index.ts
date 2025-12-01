@@ -17,6 +17,7 @@ export type SignInActionState = {
 
 /**
  * Server Action para realizar signin do usuário
+ * O sistema detecta automaticamente se é candidato ou empresa pelo email
  * @param formData - FormData contendo dados do signin
  * @returns Resultado da ação com status de sucesso/erro
  */
@@ -39,11 +40,10 @@ export async function signInAction(
 
     const formData_ = validationResult.data;
 
-    // Chamada à API
+    // Usar rota unificada (detecção automática de tipo pelo email)
     const response = await signIn({
       email: formData_.email,
       password: formData_.password,
-      tenantId: formData_.tenantId || "",
       twoFactorToken: formData_.twoFactorToken,
     });
 
