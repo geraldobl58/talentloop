@@ -5,9 +5,11 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { hash, compare } from 'bcrypt';
 import { randomBytes } from 'crypto';
 import { AuthRepository } from '../repositories/auth.repository';
+import { EmailService } from '@/email/services/email.service';
 import { APP_CONSTANTS, MESSAGES } from '@/libs/common/constants';
 
 /**
@@ -24,26 +26,24 @@ import { APP_CONSTANTS, MESSAGES } from '@/libs/common/constants';
 export class PasswordService {
   private readonly logger = new Logger(PasswordService.name);
 
-  constructor(private readonly authRepository: AuthRepository) {}
+  constructor(
+    private readonly authRepository: AuthRepository,
+    private readonly emailService: EmailService,
+    private readonly configService: ConfigService,
+  ) {}
 
   /**
    * Solicitar reset de senha
+   * Detecta automaticamente o tenant pelo email
    */
-  async forgotPassword(email: string, tenantId: string) {
-    const tenant = await this.authRepository.findTenantByIdOrSlug(tenantId);
-
-    if (!tenant) {
-      throw new NotFoundException(MESSAGES.ERRORS.TENANT_NOT_FOUND);
-    }
-
-    const user = await this.authRepository.findUserByEmailAndTenant(
-      email,
-      tenant.id,
-    );
+  async forgotPassword(email: string) {
+    // Buscar usuário pelo email (com tenant)
+    const user = await this.authRepository.findUserByEmailWithTenant(email);
 
     if (!user) {
       // Por segurança, não informar se o email existe
       return {
+        success: true,
         message:
           'Se o email existir em nossa base, você receberá instruções para redefinir sua senha.',
       };
@@ -69,9 +69,28 @@ export class PasswordService {
       expiresAt,
     });
 
-    // TODO: Enviar email via email service
+    // Enviar email de reset de senha
+    const frontendUrl = this.configService.get<string>(
+      'FRONTEND_URL',
+      'http://localhost:3000',
+    );
+    const resetLink = `${frontendUrl}/auth/reset-password?token=${token}`;
+
+    try {
+      await this.emailService.sendPasswordReset({
+        to: user.email,
+        userName: user.name,
+        resetLink,
+        expiryMinutes: APP_CONSTANTS.PASSWORD_RESET.TOKEN_EXPIRES_HOURS * 60,
+      });
+      this.logger.log(`Password reset email sent to ${user.email}`);
+    } catch (error) {
+      this.logger.error(`Failed to send password reset email: ${error}`);
+      // Não falhar a operação se o email não for enviado
+    }
 
     return {
+      success: true,
       message:
         'Se o email existir em nossa base, você receberá instruções para redefinir sua senha.',
     };
