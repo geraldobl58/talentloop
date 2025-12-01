@@ -90,15 +90,16 @@ describe('Auth (e2e)', () => {
         .send({
           email: 'test@example.com',
           password: 'weak',
-          tenantId: 'test-tenant',
         });
 
       expect(response.status).toBe(400);
     });
 
-    it('should call signIn service with valid data', async () => {
+    it('should call signIn service with valid data (auto-detect tenant type)', async () => {
       mockAuthService.signIn.mockResolvedValue({
+        requiresTwoFactor: false,
         access_token: 'mock-token',
+        tenantType: 'CANDIDATE',
         user: { id: '1', email: 'test@example.com' },
       });
 
@@ -107,16 +108,34 @@ describe('Auth (e2e)', () => {
         .send({
           email: 'test@example.com',
           password: 'Password@123',
-          tenantId: 'test-tenant',
         });
 
       expect(response.status).toBe(200);
+      expect(response.body.tenantType).toBe('CANDIDATE');
       expect(mockAuthService.signIn).toHaveBeenCalledWith(
         'test@example.com',
         'Password@123',
-        'test-tenant',
         undefined,
       );
+    });
+
+    it('should return COMPANY tenantType for company users', async () => {
+      mockAuthService.signIn.mockResolvedValue({
+        requiresTwoFactor: false,
+        access_token: 'mock-token',
+        tenantType: 'COMPANY',
+        user: { id: '1', email: 'admin@company.com' },
+      });
+
+      const response = await request(app.getHttpServer())
+        .post('/auth/signin')
+        .send({
+          email: 'admin@company.com',
+          password: 'Password@123',
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.tenantType).toBe('COMPANY');
     });
   });
 

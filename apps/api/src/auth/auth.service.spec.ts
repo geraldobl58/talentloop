@@ -46,6 +46,7 @@ describe('AuthService', () => {
       const expectedResult = {
         requiresTwoFactor: false,
         access_token: 'mock-jwt-token',
+        tenantType: 'CANDIDATE',
         user: {
           id: 'user-123',
           name: 'Test User',
@@ -55,17 +56,12 @@ describe('AuthService', () => {
 
       mockSignInService.execute.mockResolvedValue(expectedResult);
 
-      const result = await service.signIn(
-        'test@example.com',
-        'password123',
-        'test-company',
-      );
+      const result = await service.signIn('test@example.com', 'password123');
 
       expect(result).toEqual(expectedResult);
       expect(mockSignInService.execute).toHaveBeenCalledWith(
         'test@example.com',
         'password123',
-        'test-company',
         undefined,
       );
     });
@@ -76,7 +72,7 @@ describe('AuthService', () => {
       );
 
       await expect(
-        service.signIn('test@example.com', 'wrongpassword', 'test-company'),
+        service.signIn('test@example.com', 'wrongpassword'),
       ).rejects.toThrow(UnauthorizedException);
     });
 
@@ -89,11 +85,7 @@ describe('AuthService', () => {
 
       mockSignInService.execute.mockResolvedValue(expectedResult);
 
-      const result = await service.signIn(
-        'test@example.com',
-        'password123',
-        'test-company',
-      );
+      const result = await service.signIn('test@example.com', 'password123');
 
       expect(result).toEqual(expectedResult);
     });
@@ -102,6 +94,7 @@ describe('AuthService', () => {
       const expectedResult = {
         requiresTwoFactor: false,
         access_token: 'mock-jwt-token',
+        tenantType: 'COMPANY',
         user: {
           id: 'user-123',
           name: 'Test User',
@@ -114,7 +107,6 @@ describe('AuthService', () => {
       const result = await service.signIn(
         'test@example.com',
         'password123',
-        'test-company',
         '123456',
       );
 
@@ -123,7 +115,6 @@ describe('AuthService', () => {
       expect(mockSignInService.execute).toHaveBeenCalledWith(
         'test@example.com',
         'password123',
-        'test-company',
         '123456',
       );
     });
@@ -134,12 +125,7 @@ describe('AuthService', () => {
       );
 
       await expect(
-        service.signIn(
-          'test@example.com',
-          'password123',
-          'test-company',
-          'invalid-token',
-        ),
+        service.signIn('test@example.com', 'password123', 'invalid-token'),
       ).rejects.toThrow(UnauthorizedException);
     });
   });
