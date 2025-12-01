@@ -8,7 +8,7 @@ import {
   IsOptional,
   Validate,
 } from 'class-validator';
-import { IsUrlOrLocalhostConstraint } from './signup.dto';
+import { IsUrlOrLocalhostConstraint } from './validators';
 
 /**
  * Planos disponíveis para empresas (B2B)
@@ -112,7 +112,7 @@ export class SignupCompanyResponseDto {
   tenantType?: 'COMPANY';
 
   @ApiProperty({
-    description: 'URL do checkout do Stripe (se plano não for trial)',
+    description: 'URL do checkout do Stripe (para planos pagos)',
     example: 'https://checkout.stripe.com/pay/cs_1234567890',
     required: false,
   })
@@ -148,17 +148,11 @@ export class SignupCompanyResponseDto {
     name: string;
     price: number;
     currency: string;
+    billingPeriodDays: number;
   };
 
   @ApiProperty({
-    description: 'Indica se é período de trial',
-    example: true,
-    required: false,
-  })
-  isTrial?: boolean;
-
-  @ApiProperty({
-    description: 'Token JWT para login automático (trial)',
+    description: 'Token JWT para login automático',
     required: false,
   })
   token?: string;

@@ -8,7 +8,7 @@ import {
   IsOptional,
   Validate,
 } from 'class-validator';
-import { IsUrlOrLocalhostConstraint } from './signup.dto';
+import { IsUrlOrLocalhostConstraint } from './validators';
 
 /**
  * Planos disponíveis para candidatos (B2C)

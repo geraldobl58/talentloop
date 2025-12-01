@@ -404,8 +404,8 @@ export class SignupCheckoutService {
         name: plan.name,
         price: plan.price,
         currency: plan.currency,
+        billingPeriodDays: plan.billingPeriodDays,
       },
-      isTrial: false,
     };
   }
 
@@ -479,6 +479,7 @@ export class SignupCheckoutService {
         name: plan.name,
         price: plan.price,
         currency: plan.currency,
+        billingPeriodDays: plan.billingPeriodDays,
       },
     };
   }
@@ -599,12 +600,18 @@ export class SignupCheckoutService {
         },
       });
     } else {
+      // Calcular data de expiração baseado no billingPeriodDays do plano
+      const expiresAt =
+        plan.billingPeriodDays > 0
+          ? new Date(Date.now() + plan.billingPeriodDays * 24 * 60 * 60 * 1000)
+          : null; // FREE plans don't expire
+
       await this.authRepository.createSubscription({
         tenantId: candidatesTenant.id,
         planId: plan.id,
         status: SubStatus.ACTIVE,
         startedAt: new Date(),
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 dias
+        expiresAt,
       });
     }
 
@@ -660,13 +667,19 @@ export class SignupCheckoutService {
       },
     });
 
+    // Calcular data de expiração baseado no billingPeriodDays do plano
+    const expiresAt =
+      plan.billingPeriodDays > 0
+        ? new Date(Date.now() + plan.billingPeriodDays * 24 * 60 * 60 * 1000)
+        : null;
+
     // Criar subscription
     await this.authRepository.createSubscription({
       tenantId: tenant.id,
       planId: plan.id,
       status: SubStatus.ACTIVE,
       startedAt: new Date(),
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 dias
+      expiresAt,
     });
 
     // Atualizar subscription com dados do Stripe
