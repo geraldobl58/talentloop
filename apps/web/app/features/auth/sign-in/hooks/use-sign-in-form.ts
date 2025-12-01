@@ -1,61 +1,36 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { setCookie } from "cookies-next";
 
-import { FormSignInData, getSignInSchema } from "../schemas";
+import { FormSignInData, formSignInSchema } from "../schemas";
 import { signInAction } from "../actions";
-import { DEFAULT_CANDIDATE_TENANT, UserType, TenantType } from "../types";
+import { TenantType } from "../types";
 
-interface UseSignInFormOptions {
-  userType: UserType;
-}
-
-export const useSignInForm = ({ userType }: UseSignInFormOptions) => {
+/**
+ * Hook para gerenciar o formulário de signin unificado
+ * O tipo de usuário (CANDIDATE ou COMPANY) é detectado automaticamente pelo backend
+ */
+export const useSignInForm = () => {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
   const [successMessage, setSuccessMessage] = useState<string | undefined>();
   const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
 
-  const schema = getSignInSchema(userType);
-
   const form = useForm<FormSignInData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(formSignInSchema),
     defaultValues: {
       email: "",
       password: "",
-      tenantId: userType === UserType.CANDIDATE ? DEFAULT_CANDIDATE_TENANT : "",
       twoFactorToken: "",
     },
   });
-
-  // Pré-preencher domínio se vindo do signup TRIAL
-  useEffect(() => {
-    const tenant = searchParams.get("tenant");
-    if (tenant && userType === UserType.COMPANY) {
-      form.setValue("tenantId", tenant);
-    }
-  }, [searchParams, form, userType]);
-
-  // Reset form when user type changes
-  useEffect(() => {
-    form.reset({
-      email: form.getValues("email"),
-      password: "",
-      tenantId: userType === UserType.CANDIDATE ? DEFAULT_CANDIDATE_TENANT : "",
-      twoFactorToken: "",
-    });
-    setErrorMessage(undefined);
-    setSuccessMessage(undefined);
-    setRequiresTwoFactor(false);
-  }, [userType, form]);
 
   const onSubmit = useCallback(
     async (values: FormSignInData) => {
@@ -64,18 +39,10 @@ export const useSignInForm = ({ userType }: UseSignInFormOptions) => {
       setSuccessMessage(undefined);
 
       try {
-        // Para candidatos, usar tenant padrão
-        const tenantId =
-          userType === UserType.CANDIDATE
-            ? DEFAULT_CANDIDATE_TENANT
-            : values.tenantId;
-
         // Converter valores para FormData para a server action
         const formData = new FormData();
         formData.append("email", values.email);
         formData.append("password", values.password);
-        formData.append("tenantId", tenantId || "");
-        formData.append("userType", userType);
         if (values.twoFactorToken) {
           formData.append("twoFactorToken", values.twoFactorToken);
         }
@@ -138,7 +105,7 @@ export const useSignInForm = ({ userType }: UseSignInFormOptions) => {
         setIsLoading(false);
       }
     },
-    [userType, router, form]
+    [router, form]
   );
 
   return {
