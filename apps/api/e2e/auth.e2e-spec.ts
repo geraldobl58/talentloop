@@ -241,15 +241,14 @@ describe('Auth (e2e)', () => {
     it('should return 400 for missing email', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/forgot-password')
-        .send({
-          tenantId: 'test-tenant',
-        });
+        .send({});
 
       expect(response.status).toBe(400);
     });
 
-    it('should call forgotPassword service', async () => {
+    it('should call forgotPassword service with email only (auto-detect tenant)', async () => {
       mockAuthService.forgotPassword.mockResolvedValue({
+        success: true,
         message: 'Email sent if exists',
       });
 
@@ -257,13 +256,11 @@ describe('Auth (e2e)', () => {
         .post('/auth/forgot-password')
         .send({
           email: 'test@example.com',
-          tenantId: 'test-tenant',
         });
 
       expect(response.status).toBe(200);
       expect(mockAuthService.forgotPassword).toHaveBeenCalledWith(
         'test@example.com',
-        'test-tenant',
       );
     });
   });
