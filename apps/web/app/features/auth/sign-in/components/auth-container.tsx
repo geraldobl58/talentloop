@@ -19,7 +19,7 @@ export const AuthContainer = ({
     <Box className="flex flex-col items-center justify-center min-h-screen bg-linear-to-br from-blue-600 via-blue-500 to-purple-600 p-4">
       <Paper elevation={3} sx={{ width: "100%", maxWidth: 580 }}>
         <Box>
-          <Link href="/" className="absolute">
+          <Link href="/plans" className="absolute">
             <ArrowBack className="ml-4 mt-8 text-sm text-blue-600 hover:text-blue-800 font-medium" />
           </Link>
         </Box>
