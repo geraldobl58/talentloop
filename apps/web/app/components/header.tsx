@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Box, Button, Container } from "@mui/material";
 
 import { Logo } from "./logo";
+import { NavLinks } from "./nav-links";
 
 export const Header = () => {
   return (
@@ -22,6 +23,7 @@ export const Header = () => {
           <Link href="/">
             <Logo />
           </Link>
+          <NavLinks />
           <Button variant="outlined" href="/auth/sign-in" component={Link}>
             Já tenho conta
           </Button>
