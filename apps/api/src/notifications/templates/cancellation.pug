@@ -3,92 +3,216 @@ html(lang="pt-BR")
   head
     meta(charset="UTF-8")
     meta(name="viewport" content="width=device-width, initial-scale=1.0")
-    title Assinatura Cancelada - talenntloop
-    style
-      include ./styles/base.css
-      include ./styles/cancellation.css
+    title Assinatura Cancelada - TalentLoop
+    style.
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 40px 20px;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px 30px;
+        text-align: center;
+      }
+      .header h1 {
+        font-size: 28px;
+        margin-bottom: 8px;
+      }
+      .header p {
+        opacity: 0.9;
+        font-size: 16px;
+      }
+      .content {
+        padding: 40px 30px;
+      }
+      .content > p {
+        color: #333;
+        font-size: 16px;
+        line-height: 1.6;
+        margin-bottom: 16px;
+      }
+      .info-box {
+        background: #f8f9ff;
+        border: 2px solid #667eea;
+        border-radius: 12px;
+        padding: 25px;
+        margin: 25px 0;
+      }
+      .info-box h3 {
+        color: #1a1a2e;
+        font-size: 18px;
+        margin-bottom: 15px;
+      }
+      .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #e0e0e0;
+      }
+      .info-row:last-child {
+        border-bottom: none;
+      }
+      .info-label {
+        color: #666;
+        font-weight: 500;
+      }
+      .info-value {
+        font-family: 'Monaco', 'Menlo', monospace;
+        background: #fff;
+        padding: 8px 12px;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+        color: #333;
+        font-weight: 600;
+      }
+      .info-text {
+        color: #666;
+        font-size: 14px;
+        line-height: 1.5;
+        margin-top: 15px;
+      }
+      .actions-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .actions-list li {
+        padding: 10px 0;
+        color: #333;
+        font-size: 14px;
+        line-height: 1.5;
+        border-bottom: 1px solid #f0f0f0;
+      }
+      .actions-list li:last-child {
+        border-bottom: none;
+      }
+      .warning-box {
+        background: #fff7ed;
+        border: 1px solid #fdba74;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 25px 0;
+      }
+      .warning-box h4 {
+        color: #9a3412;
+        font-size: 16px;
+        margin-bottom: 15px;
+      }
+      .warning-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .warning-list li {
+        padding: 8px 0;
+        color: #9a3412;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      .cta-button {
+        text-align: center;
+        margin: 30px 0;
+      }
+      .cta-button a {
+        display: inline-block;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-decoration: none;
+        padding: 16px 40px;
+        border-radius: 30px;
+        font-size: 16px;
+        font-weight: 600;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      .cta-button a:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+      }
+      .footer {
+        background: #f8f9fa;
+        padding: 30px;
+        text-align: center;
+        border-top: 1px solid #e9ecef;
+      }
+      .footer p {
+        color: #666;
+        font-size: 14px;
+        margin-bottom: 8px;
+      }
+      .footer a {
+        color: #667eea;
+        text-decoration: none;
+      }
 
   body
     .container
-      .header.header-danger
+      .header
         h1 ❌ Assinatura Cancelada
         p #{companyName}
 
       .content
-        p Olá 
+        p
+          | Olá 
           strong #{contactName}
           |,
 
-        p Confirmamos que sua assinatura do plano 
+        p
+          | Confirmamos que sua assinatura do plano 
           strong #{planName}
           |  foi cancelada com sucesso.
 
-        .important-box
+        .info-box
           h3 📋 Informações Importantes
-          
-          .info-item
-            p.info-label ✅ Seu acesso continuará até:
-            p.info-value #{expirationDate}
-          
-          p.info-text Você terá acesso completo a todos os recursos do plano #{planName} até a data acima. Após essa data, sua conta será downgrade para o plano gratuito (se disponível).
+          .info-row
+            span.info-label Seu acesso continua até:
+            span.info-value #{expirationDate}
+          p.info-text Você terá acesso completo a todos os recursos do plano #{planName} até a data acima.
 
-        .actions-box
+        .info-box
           h3 🔄 O que você pode fazer durante este período
           ul.actions-list
             li
               strong 📥 Exportar dados:
-              |  Exporte todos os seus contatos, propriedades e dados importantes em formato CSV/Excel
-            
+              |  Exporte seus dados em formato CSV/Excel
             li
-              strong 📊 Relatórios finais:
-              |  Gere relatórios completos enquanto tem acesso aos dados
-            
+              strong 📊 Relatórios:
+              |  Gere relatórios completos
             li
-              strong 🔗 Integrações:
-              |  Desconecte integrações e resgate qualquer API key necessária
-            
-            li
-              strong 👥 Permissões:
-              |  Gerenciar acessos da equipe e fazer transição de responsabilidades
-            
-            li
-              strong 💾 Backup manual:
-              |  Crie backups manuais de informações críticas
-            
-            li
-              strong 🔄 Reativar a qualquer tempo:
-              |  Você pode reativar sua assinatura a qualquer momento sem perder dados
+              strong 🔄 Reativar:
+              |  Reative sua assinatura a qualquer momento
 
         .warning-box
-          h4 ⚠️ Informações Importantes sobre Retenção de Dados
+          h4 ⚠️ Retenção de Dados
           ul.warning-list
             li
-              strong Acesso contínuo:
-              |  Você tem acesso completo até #{expirationDate}
-            
-            li
-              strong Após expiração:
-              |  Conta será movida para plano gratuito (se disponível) com funcionalidades limitadas
-            
-            li
               strong Dados preservados:
-              |  Seus dados serão mantidos por 90 dias após cancelamento
-            
+              |  Seus dados serão mantidos por 90 dias
             li
               strong Reativação:
-              |  Ao reativar, seus dados estarão intactos e disponíveis imediatamente
+              |  Ao reativar, seus dados estarão disponíveis
 
         .cta-button
-          a(href="https://talenntloop.com/dashboard/plans") 🔄 Reativar Assinatura
+          a(href="https://talentloop.com/dashboard/plans") 🔄 Reativar Assinatura
 
       .footer
-        p Atenciosamente,
-        strong Equipe talenntloop
-        
-        hr
-        
-        p Este é um email automático relacionado ao cancelamento de sua assinatura.
-        .footer-links
-          a(href="mailto:suporte@talenntloop.com") 📧 Suporte
-          span |
-          a(href="https://talenntloop.com") 🌐 Website
+        p Equipe TalentLoop
+        p
+          a(href="mailto:suporte@talentloop.com") suporte@talentloop.com
+        p © 2025 TalentLoop. Todos os direitos reservados.
