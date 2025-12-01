@@ -17,7 +17,7 @@ import {
   PlanType,
   DEFAULT_CANDIDATE_PLAN,
   DEFAULT_COMPANY_PLAN,
-} from "../components/plans-data";
+} from "../../../../libs/plans-data";
 import { signUpCandidateAction, signUpCompanyAction } from "../actions";
 
 // =============================================
