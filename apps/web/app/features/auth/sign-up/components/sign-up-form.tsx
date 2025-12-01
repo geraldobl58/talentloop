@@ -86,12 +86,12 @@ const FormFooter = ({ isLoading }: FormFooterProps) => (
     {/* Sign In Link */}
     <Box className="flex flex-col items-center gap-1 mt-4">
       <Typography variant="body2" className="text-gray-600">
-        Já possui uma conta?{" "}
+        Escolher outros{" "}
         <Link
-          href="/auth/sign-in"
+          href="/plans"
           className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
         >
-          Fazer login
+          Planos
         </Link>
       </Typography>
     </Box>
