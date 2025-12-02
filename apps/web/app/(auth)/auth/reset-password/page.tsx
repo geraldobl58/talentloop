@@ -3,7 +3,7 @@
 import { Suspense } from "react";
 import { Box, CircularProgress } from "@mui/material";
 
-import { AuthContainer } from "@/app/features/auth/sign-in/components";
+import { AuthContainer } from "@/app/features/auth/sign-in/components/auth-container";
 import { ResetPassword } from "@/app/features/auth/reset-password/components/reset-password";
 
 const ResetPasswordContent = () => {
