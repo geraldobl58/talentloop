@@ -25,6 +25,8 @@ import { Logout } from "@mui/icons-material";
 
 const drawerWidth = 340;
 
+import { filterMenuByRole, RoleType } from "@talentloop/roles";
+
 import { CandidateCard } from "@/app/features/dashboard/candidate/components/candidate-card";
 import { CompanyCard } from "@/app/features/dashboard/company/components/company-card";
 import { candidateMenuItems } from "@/app/features/dashboard/candidate/components/candidate-menu-items";
@@ -88,8 +90,16 @@ const DashboardPage = () => {
   // Extrair primeiro nome para saudação
   const firstName = profile?.name?.split(" ")[0] || "Usuário";
 
+  // Role do usuário (apenas para empresas)
+  const userRole = profile?.role as RoleType | undefined;
+
+  // Filtrar menu items baseado na role do usuário
+  // Para candidatos: mostra todos os itens (candidatos não usam sistema de roles)
+  // Para empresas: filtra baseado na role do usuário
   const menuItems =
-    userType === UserType.CANDIDATE ? candidateMenuItems : companyMenuItems;
+    userType === UserType.CANDIDATE
+      ? candidateMenuItems
+      : filterMenuByRole(companyMenuItems, userRole);
 
   return (
     <Box sx={{ display: "flex" }}>
