@@ -5,461 +5,38 @@ import { useRouter } from "next/navigation";
 import { getCookie, deleteCookie } from "cookies-next";
 
 import {
+  AppBar,
   Box,
-  Paper,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  Button,
-  Avatar,
   Chip,
+  CssBaseline,
+  Divider,
+  Drawer,
   IconButton,
-  Skeleton,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Toolbar,
+  Typography,
 } from "@mui/material";
+import { Logout } from "@mui/icons-material";
 
-import {
-  Work as WorkIcon,
-  Person as PersonIcon,
-  Business as BusinessIcon,
-  TrendingUp as TrendingUpIcon,
-  Description as DescriptionIcon,
-  Search as SearchIcon,
-  People as PeopleIcon,
-  Assessment as AssessmentIcon,
-  Settings as SettingsIcon,
-  Logout as LogoutIcon,
-  Add as AddIcon,
-} from "@mui/icons-material";
+const drawerWidth = 340;
+
+import { CandidateCard } from "@/app/features/dashboard/candidate/components/candidate-card";
+import { CompanyCard } from "@/app/features/dashboard/company/components/company-card";
+import { candidateMenuItems } from "@/app/features/dashboard/candidate/components/candidate-menu-items";
+import { companyMenuItems } from "@/app/features/dashboard/company/components/company-menu-items";
 
 import { Logo } from "@/app/components/logo";
-import {
-  UserType,
-  TenantType,
-  USER_TYPE_CONFIGS,
-} from "@/app/features/auth/sign-in/types/user-type";
+import { DashboardLoadingSkeleton } from "@/app/components/dashboard-loading-skeleton";
 
-// ============================================
-// Helper: Map TenantType (from API) to UserType (for UI)
-// ============================================
-const mapTenantTypeToUserType = (
-  tenantType: TenantType | undefined
-): UserType => {
-  if (tenantType === "COMPANY") {
-    return UserType.COMPANY;
-  }
-  return UserType.CANDIDATE;
-};
+import { TenantType } from "@/app/shared/types/tenant-type";
+import { USER_TYPE_CONFIGS, UserType } from "@/app/shared/types/user-type";
 
-// ============================================
-// Types
-// ============================================
-interface DashboardStats {
-  label: string;
-  value: string | number;
-  icon: React.ReactNode;
-  color: string;
-}
+import { mapTenantTypeToUserType } from "@/app/libs/map-tenant-type-to-user-type";
 
-interface QuickAction {
-  label: string;
-  description: string;
-  icon: React.ReactNode;
-  href: string;
-  color: string;
-}
-
-// ============================================
-// Candidate Dashboard Component
-// ============================================
-const CandidateDashboard = () => {
-  const stats: DashboardStats[] = [
-    {
-      label: "Candidaturas Enviadas",
-      value: 12,
-      icon: <DescriptionIcon />,
-      color: "primary",
-    },
-    {
-      label: "Vagas Salvas",
-      value: 8,
-      icon: <WorkIcon />,
-      color: "secondary",
-    },
-    {
-      label: "Entrevistas Agendadas",
-      value: 3,
-      icon: <PersonIcon />,
-      color: "success",
-    },
-    {
-      label: "Match Score Médio",
-      value: "78%",
-      icon: <TrendingUpIcon />,
-      color: "info",
-    },
-  ];
-
-  const quickActions: QuickAction[] = [
-    {
-      label: "Buscar Vagas",
-      description: "Encontre oportunidades que combinam com você",
-      icon: <SearchIcon />,
-      href: "/jobs",
-      color: "#3b82f6",
-    },
-    {
-      label: "Meu Currículo",
-      description: "Atualize seu perfil profissional",
-      icon: <DescriptionIcon />,
-      href: "/profile",
-      color: "#8b5cf6",
-    },
-    {
-      label: "Candidaturas",
-      description: "Acompanhe suas candidaturas",
-      icon: <WorkIcon />,
-      href: "/applications",
-      color: "#10b981",
-    },
-    {
-      label: "Configurações",
-      description: "Preferências e notificações",
-      icon: <SettingsIcon />,
-      href: "/settings",
-      color: "#6b7280",
-    },
-  ];
-
-  return (
-    <Box>
-      {/* Stats Grid */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {stats.map((stat, index) => (
-          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
-            <Card
-              sx={{
-                height: "100%",
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                color: "white",
-              }}
-            >
-              <CardContent>
-                <Box className="flex items-center justify-between">
-                  <Box>
-                    <Typography variant="h4" fontWeight="bold">
-                      {stat.value}
-                    </Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                      {stat.label}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ opacity: 0.8 }}>{stat.icon}</Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-
-      {/* Quick Actions */}
-      <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
-        Ações Rápidas
-      </Typography>
-      <Grid container spacing={3}>
-        {quickActions.map((action, index) => (
-          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
-            <Card
-              sx={{
-                height: "100%",
-                cursor: "pointer",
-                transition: "all 0.2s",
-                "&:hover": {
-                  transform: "translateY(-4px)",
-                  boxShadow: 4,
-                },
-              }}
-            >
-              <CardContent>
-                <Box
-                  sx={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 2,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    bgcolor: action.color,
-                    color: "white",
-                    mb: 2,
-                  }}
-                >
-                  {action.icon}
-                </Box>
-                <Typography variant="subtitle1" fontWeight="bold">
-                  {action.label}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {action.description}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-
-      {/* Recent Jobs */}
-      <Box sx={{ mt: 4 }}>
-        <Box className="flex items-center justify-between mb-2">
-          <Typography variant="h6" fontWeight="bold">
-            Vagas Recomendadas para Você
-          </Typography>
-          <Button variant="text" size="small">
-            Ver todas
-          </Button>
-        </Box>
-        <Card>
-          <CardContent>
-            <Box className="space-y-4">
-              {[1, 2, 3].map((_, index) => (
-                <Box
-                  key={index}
-                  className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 cursor-pointer"
-                >
-                  <Box className="flex items-center gap-3">
-                    <Avatar sx={{ bgcolor: "#3b82f6" }}>
-                      <BusinessIcon />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="subtitle2" fontWeight="bold">
-                        Desenvolvedor Full Stack
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Tech Company • Remoto • R$ 8.000 - R$ 12.000
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Chip label="92% Match" color="success" size="small" />
-                </Box>
-              ))}
-            </Box>
-          </CardContent>
-        </Card>
-      </Box>
-    </Box>
-  );
-};
-
-// ============================================
-// Company Dashboard Component
-// ============================================
-const CompanyDashboard = () => {
-  const stats: DashboardStats[] = [
-    {
-      label: "Vagas Ativas",
-      value: 5,
-      icon: <WorkIcon />,
-      color: "primary",
-    },
-    {
-      label: "Candidaturas Recebidas",
-      value: 47,
-      icon: <DescriptionIcon />,
-      color: "secondary",
-    },
-    {
-      label: "Candidatos em Processo",
-      value: 12,
-      icon: <PeopleIcon />,
-      color: "success",
-    },
-    {
-      label: "Contratações do Mês",
-      value: 2,
-      icon: <TrendingUpIcon />,
-      color: "info",
-    },
-  ];
-
-  const quickActions: QuickAction[] = [
-    {
-      label: "Nova Vaga",
-      description: "Publique uma nova oportunidade",
-      icon: <AddIcon />,
-      href: "/jobs/new",
-      color: "#3b82f6",
-    },
-    {
-      label: "Candidatos",
-      description: "Gerencie os candidatos",
-      icon: <PeopleIcon />,
-      href: "/candidates",
-      color: "#8b5cf6",
-    },
-    {
-      label: "Relatórios",
-      description: "Métricas e analytics",
-      icon: <AssessmentIcon />,
-      href: "/reports",
-      color: "#10b981",
-    },
-    {
-      label: "Configurações",
-      description: "Configurações da empresa",
-      icon: <SettingsIcon />,
-      href: "/settings",
-      color: "#6b7280",
-    },
-  ];
-
-  return (
-    <Box>
-      {/* Stats Grid */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {stats.map((stat, index) => (
-          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
-            <Card
-              sx={{
-                height: "100%",
-                background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-                color: "white",
-              }}
-            >
-              <CardContent>
-                <Box className="flex items-center justify-between">
-                  <Box>
-                    <Typography variant="h4" fontWeight="bold">
-                      {stat.value}
-                    </Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                      {stat.label}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ opacity: 0.8 }}>{stat.icon}</Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-
-      {/* Quick Actions */}
-      <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
-        Ações Rápidas
-      </Typography>
-      <Grid container spacing={3}>
-        {quickActions.map((action, index) => (
-          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
-            <Card
-              sx={{
-                height: "100%",
-                cursor: "pointer",
-                transition: "all 0.2s",
-                "&:hover": {
-                  transform: "translateY(-4px)",
-                  boxShadow: 4,
-                },
-              }}
-            >
-              <CardContent>
-                <Box
-                  sx={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 2,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    bgcolor: action.color,
-                    color: "white",
-                    mb: 2,
-                  }}
-                >
-                  {action.icon}
-                </Box>
-                <Typography variant="subtitle1" fontWeight="bold">
-                  {action.label}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {action.description}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-
-      {/* Recent Applications */}
-      <Box sx={{ mt: 4 }}>
-        <Box className="flex items-center justify-between mb-2">
-          <Typography variant="h6" fontWeight="bold">
-            Candidaturas Recentes
-          </Typography>
-          <Button variant="text" size="small">
-            Ver todas
-          </Button>
-        </Box>
-        <Card>
-          <CardContent>
-            <Box className="space-y-4">
-              {[1, 2, 3].map((_, index) => (
-                <Box
-                  key={index}
-                  className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 cursor-pointer"
-                >
-                  <Box className="flex items-center gap-3">
-                    <Avatar sx={{ bgcolor: "#f5576c" }}>
-                      <PersonIcon />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="subtitle2" fontWeight="bold">
-                        João Silva
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Desenvolvedor Full Stack • 5 anos de exp.
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Box className="flex items-center gap-2">
-                    <Chip label="85% Match" color="success" size="small" />
-                    <Chip label="Novo" color="primary" size="small" />
-                  </Box>
-                </Box>
-              ))}
-            </Box>
-          </CardContent>
-        </Card>
-      </Box>
-    </Box>
-  );
-};
-
-// ============================================
-// Dashboard Loading Skeleton
-// ============================================
-const DashboardSkeleton = () => (
-  <Box>
-    <Grid container spacing={3} sx={{ mb: 4 }}>
-      {[1, 2, 3, 4].map((_, index) => (
-        <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
-          <Skeleton variant="rounded" height={120} />
-        </Grid>
-      ))}
-    </Grid>
-    <Skeleton variant="text" width={150} height={32} sx={{ mb: 2 }} />
-    <Grid container spacing={3}>
-      {[1, 2, 3, 4].map((_, index) => (
-        <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
-          <Skeleton variant="rounded" height={150} />
-        </Grid>
-      ))}
-    </Grid>
-  </Box>
-);
-
-// ============================================
-// Main Dashboard Page
-// ============================================
 const DashboardPage = () => {
   const router = useRouter();
   const [userType, setUserType] = useState<UserType | null>(null);
@@ -496,7 +73,7 @@ const DashboardPage = () => {
     return (
       <Box className="min-h-screen bg-gray-50 p-6">
         <Box className="max-w-7xl mx-auto">
-          <DashboardSkeleton />
+          <DashboardLoadingSkeleton />
         </Box>
       </Box>
     );
@@ -504,61 +81,82 @@ const DashboardPage = () => {
 
   const config = USER_TYPE_CONFIGS[userType];
 
+  const menuItems =
+    userType === UserType.CANDIDATE ? candidateMenuItems : companyMenuItems;
+
   return (
-    <Box className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <Paper
-        elevation={0}
-        sx={{
-          borderBottom: 1,
-          borderColor: "divider",
-          position: "sticky",
-          top: 0,
-          zIndex: 10,
-        }}
+    <Box sx={{ display: "flex" }}>
+      <CssBaseline />
+      <AppBar
+        position="fixed"
+        sx={{ width: `calc(100% - ${drawerWidth}px)`, ml: `${drawerWidth}px` }}
       >
-        <Box className="max-w-7xl mx-auto px-6 py-3">
-          <Box className="flex items-center justify-between">
-            <Box className="flex items-center gap-4">
-              <Logo />
-              <Chip
-                label={config.label}
-                color={
-                  userType === UserType.CANDIDATE ? "primary" : "secondary"
-                }
-                size="small"
-              />
-            </Box>
-            <Box className="flex items-center gap-2">
-              <IconButton size="small">
-                <SettingsIcon />
-              </IconButton>
-              <IconButton size="small" onClick={handleLogout} color="error">
-                <LogoutIcon />
-              </IconButton>
-            </Box>
+        <Toolbar>
+          <Box>
+            <Typography variant="h6" noWrap component="div">
+              {config.dashboardTitle}
+            </Typography>
+            <Typography variant="body2">
+              {config.dashboardDescription}
+            </Typography>
+          </Box>
+        </Toolbar>
+      </AppBar>
+      <Drawer
+        sx={{
+          width: drawerWidth,
+          flexShrink: 0,
+          "& .MuiDrawer-paper": {
+            width: drawerWidth,
+            boxSizing: "border-box",
+          },
+        }}
+        variant="permanent"
+        anchor="left"
+      >
+        <Toolbar className="flex items-center justify-between px-4">
+          <Logo />
+          <Chip
+            label={config.label}
+            color={userType === UserType.CANDIDATE ? "primary" : "secondary"}
+            size="small"
+          />
+        </Toolbar>
+        <Divider />
+        <Box className="flex flex-col justify-between h-full p-2">
+          <List>
+            {menuItems.map((item) => (
+              <ListItem key={item.label} disablePadding>
+                <ListItemButton selected={item.href === "/dashboard"}>
+                  <ListItemIcon>{item.icon}</ListItemIcon>
+                  <ListItemText primary={item.label} />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
+
+          <Box className="flex items-center justify-between gap-2 p-2">
+            <Typography variant="body2">
+              Olá, Jane Doe, bem-vinda de volta!
+            </Typography>
+            <IconButton size="small" onClick={handleLogout}>
+              <Logout />
+            </IconButton>
           </Box>
         </Box>
-      </Paper>
-
-      {/* Main Content */}
-      <Box className="max-w-7xl mx-auto px-6 py-8">
-        {/* Welcome Section */}
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            {config.dashboardTitle}
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            {config.dashboardDescription}
-          </Typography>
+      </Drawer>
+      <Box
+        component="main"
+        sx={{ flexGrow: 1, bgcolor: "background.default", p: 3 }}
+      >
+        <Toolbar />
+        <Box>
+          {userType === UserType.CANDIDATE ? (
+            <CandidateCard />
+          ) : (
+            <CompanyCard />
+          )}
         </Box>
-
-        {/* Render appropriate dashboard based on user type */}
-        {userType === UserType.CANDIDATE ? (
-          <CandidateDashboard />
-        ) : (
-          <CompanyDashboard />
-        )}
       </Box>
     </Box>
   );
