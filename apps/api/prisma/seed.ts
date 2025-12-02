@@ -495,7 +495,34 @@ async function main() {
   });
   console.log('✅ Created Candidates Tenant:', candidatesTenant.id);
 
-  // Candidate 1: Basic user
+  // ============================
+  // CANDIDATOS - Todos com role MEMBER (não usam sistema de roles)
+  // ============================
+
+  // Candidate 1: Jane Doe (main test user)
+  const janeDoe = await prisma.user.create({
+    data: {
+      tenantId: candidatesTenant.id,
+      name: 'Jane Doe',
+      email: 'janedoe@email.com',
+      password: await hashPassword('SenhaForte123!@#'),
+      isActive: true,
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=jane',
+      twoFactorEnabled: false,
+    },
+  });
+  console.log('✅ Created Candidate (Jane Doe):', janeDoe.id);
+
+  await prisma.userRole.create({
+    data: {
+      userId: janeDoe.id,
+      roleId: memberRole.id,
+      tenantId: candidatesTenant.id,
+      assignedBy: 'system',
+    },
+  });
+
+  // Candidate 2: Basic user
   const candidate1 = await prisma.user.create({
     data: {
       tenantId: candidatesTenant.id,
@@ -507,7 +534,7 @@ async function main() {
       twoFactorEnabled: false,
     },
   });
-  console.log('✅ Created Candidate 1 (Felipe):', candidate1.id);
+  console.log('✅ Created Candidate (Felipe):', candidate1.id);
 
   await prisma.userRole.create({
     data: {
@@ -518,7 +545,7 @@ async function main() {
     },
   });
 
-  // Candidate 2: User with 2FA
+  // Candidate 3: User with 2FA
   const candidate2 = await prisma.user.create({
     data: {
       tenantId: candidatesTenant.id,
@@ -532,7 +559,7 @@ async function main() {
       twoFactorBackupCodes: generateBackupCodes(),
     },
   });
-  console.log('✅ Created Candidate 2 (Juliana with 2FA):', candidate2.id);
+  console.log('✅ Created Candidate (Juliana with 2FA):', candidate2.id);
 
   await prisma.userRole.create({
     data: {
@@ -543,7 +570,7 @@ async function main() {
     },
   });
 
-  // Candidate 3: Full Stack Developer
+  // Candidate 4: Full Stack Developer
   const candidate3 = await prisma.user.create({
     data: {
       tenantId: candidatesTenant.id,
@@ -555,7 +582,7 @@ async function main() {
       twoFactorEnabled: false,
     },
   });
-  console.log('✅ Created Candidate 3 (Ricardo):', candidate3.id);
+  console.log('✅ Created Candidate (Ricardo):', candidate3.id);
 
   await prisma.userRole.create({
     data: {
@@ -566,7 +593,7 @@ async function main() {
     },
   });
 
-  // Candidate 4: Inactive candidate
+  // Candidate 5: Inactive candidate
   const candidate4 = await prisma.user.create({
     data: {
       tenantId: candidatesTenant.id,
@@ -578,7 +605,7 @@ async function main() {
       twoFactorEnabled: false,
     },
   });
-  console.log('✅ Created Candidate 4 (Amanda - Inactive):', candidate4.id);
+  console.log('✅ Created Candidate (Amanda - Inactive):', candidate4.id);
 
   await prisma.userRole.create({
     data: {
@@ -661,6 +688,73 @@ async function main() {
     data: {
       userId: user2.id,
       roleId: adminRole.id,
+      tenantId: tenant1.id,
+      assignedBy: user1.id,
+    },
+  });
+
+  // Add more users to Tech Startup with different roles
+  const techManager = await prisma.user.create({
+    data: {
+      tenantId: tenant1.id,
+      name: 'Paulo Manager',
+      email: 'paulo@techstartup.com',
+      password: await hashPassword('SenhaForte123!@#'),
+      isActive: true,
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=paulo',
+      twoFactorEnabled: false,
+    },
+  });
+  console.log('✅ Created Tech Startup Manager (Paulo):', techManager.id);
+
+  await prisma.userRole.create({
+    data: {
+      userId: techManager.id,
+      roleId: managerRole.id,
+      tenantId: tenant1.id,
+      assignedBy: user1.id,
+    },
+  });
+
+  const techMember = await prisma.user.create({
+    data: {
+      tenantId: tenant1.id,
+      name: 'Ana Member',
+      email: 'ana.member@techstartup.com',
+      password: await hashPassword('SenhaForte123!@#'),
+      isActive: true,
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=anamember',
+      twoFactorEnabled: false,
+    },
+  });
+  console.log('✅ Created Tech Startup Member (Ana):', techMember.id);
+
+  await prisma.userRole.create({
+    data: {
+      userId: techMember.id,
+      roleId: memberRole.id,
+      tenantId: tenant1.id,
+      assignedBy: user1.id,
+    },
+  });
+
+  const techViewer = await prisma.user.create({
+    data: {
+      tenantId: tenant1.id,
+      name: 'Lucas Viewer',
+      email: 'lucas.viewer@techstartup.com',
+      password: await hashPassword('SenhaForte123!@#'),
+      isActive: true,
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=lucasviewer',
+      twoFactorEnabled: false,
+    },
+  });
+  console.log('✅ Created Tech Startup Viewer (Lucas):', techViewer.id);
+
+  await prisma.userRole.create({
+    data: {
+      userId: techViewer.id,
+      roleId: viewerRole.id,
       tenantId: tenant1.id,
       assignedBy: user1.id,
     },
@@ -924,73 +1018,116 @@ async function main() {
   console.log('\n📋 Test Credentials:');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-  console.log('\n👤 CANDIDATOS (Login sem Tenant ID):');
+  console.log(
+    '\n👤 CANDIDATOS (Login sem Tenant ID - não usam sistema de roles):',
+  );
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-  console.log('\n1️⃣  Candidato Básico:');
+  console.log('\n1️⃣  Jane Doe:');
+  console.log('   Email: janedoe@email.com');
+  console.log('   Password: SenhaForte123!@#');
+  console.log('   Status: ✅ Active, ❌ No 2FA');
+
+  console.log('\n2️⃣  Felipe Developer:');
   console.log('   Email: felipe@gmail.com');
   console.log('   Password: SenhaForte123!@#');
   console.log('   Status: ✅ Active, ❌ No 2FA');
 
-  console.log('\n2️⃣  Candidato com 2FA:');
+  console.log('\n3️⃣  Juliana Backend (with 2FA):');
   console.log('   Email: juliana@hotmail.com');
   console.log('   Password: SenhaForte123!@#');
   console.log('   Status: ✅ Active, ✅ 2FA Enabled');
 
-  console.log('\n3️⃣  Candidato Frontend:');
+  console.log('\n4️⃣  Ricardo Frontend:');
   console.log('   Email: ricardo@yahoo.com');
   console.log('   Password: SenhaForte123!@#');
   console.log('   Status: ✅ Active, ❌ No 2FA');
 
-  console.log('\n4️⃣  Candidato Inativo:');
+  console.log('\n5️⃣  Amanda Designer (Inativo):');
   console.log('   Email: amanda@outlook.com');
   console.log('   Password: SenhaForte123!@#');
   console.log('   Status: ❌ Inactive');
 
-  console.log('\n\n🏢 EMPRESAS (Login com Tenant ID):');
+  console.log('\n\n🏢 EMPRESAS (Login com sistema de roles):');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-  console.log('\n1️⃣  Basic User (No 2FA):');
-  console.log('   Tenant ID: tech-startup-co');
+  console.log('\n📌 Tech Startup Co (todas as roles):');
+  console.log('   Tenant Slug: tech-startup-co');
+
+  console.log('\n1️⃣  João Silva (OWNER):');
   console.log('   Email: joao@techstartup.com');
   console.log('   Password: SenhaForte123!@#');
+  console.log('   Role: OWNER');
   console.log('   Status: ✅ Active, ❌ No 2FA');
 
-  console.log('\n2️⃣  User with 2FA Enabled:');
-  console.log('   Tenant ID: tech-startup-co');
+  console.log('\n2️⃣  Maria Santos (ADMIN with 2FA):');
   console.log('   Email: maria@techstartup.com');
   console.log('   Password: SenhaForte123!@#');
+  console.log('   Role: ADMIN');
   console.log('   Status: ✅ Active, ✅ 2FA Enabled');
 
-  console.log('\n3️⃣  Starter Plan User:');
-  console.log('   Tenant ID: digital-agency');
-  console.log('   Email: carlos@digitalagency.com');
+  console.log('\n3️⃣  Paulo Manager (MANAGER):');
+  console.log('   Email: paulo@techstartup.com');
   console.log('   Password: SenhaForte123!@#');
+  console.log('   Role: MANAGER');
   console.log('   Status: ✅ Active, ❌ No 2FA');
 
-  console.log('\n4️⃣  Enterprise User (with 2FA):');
-  console.log('   Tenant ID: enterprise-corp');
+  console.log('\n4️⃣  Ana Member (MEMBER):');
+  console.log('   Email: ana.member@techstartup.com');
+  console.log('   Password: SenhaForte123!@#');
+  console.log('   Role: MEMBER');
+  console.log('   Status: ✅ Active, ❌ No 2FA');
+
+  console.log('\n5️⃣  Lucas Viewer (VIEWER):');
+  console.log('   Email: lucas.viewer@techstartup.com');
+  console.log('   Password: SenhaForte123!@#');
+  console.log('   Role: VIEWER');
+  console.log('   Status: ✅ Active, ❌ No 2FA');
+
+  console.log('\n📌 Outras Empresas:');
+
+  console.log('\n6️⃣  Digital Agency (OWNER):');
+  console.log('   Tenant Slug: digital-agency');
+  console.log('   Email: carlos@digitalagency.com');
+  console.log('   Password: SenhaForte123!@#');
+  console.log('   Role: OWNER');
+  console.log('   Status: ✅ Active, ❌ No 2FA');
+
+  console.log('\n7️⃣  Enterprise Corp (OWNER with 2FA):');
+  console.log('   Tenant Slug: enterprise-corp');
   console.log('   Email: ana@enterprisecorp.com');
   console.log('   Password: SenhaForte123!@#');
+  console.log('   Role: OWNER');
   console.log('   Status: ✅ Active, ✅ 2FA Enabled');
 
-  console.log('\n5️⃣  Inactive User:');
-  console.log('   Tenant ID: enterprise-corp');
+  console.log('\n8️⃣  Enterprise Corp - Inactive:');
+  console.log('   Tenant Slug: enterprise-corp');
   console.log('   Email: roberto@enterprisecorp.com');
   console.log('   Password: SenhaForte123!@#');
+  console.log('   Role: MEMBER');
   console.log('   Status: ❌ Inactive');
 
-  console.log('\n6️⃣  Past Due Subscription:');
-  console.log('   Tenant ID: overdue-business');
+  console.log('\n9️⃣  Overdue Business (Past Due):');
+  console.log('   Tenant Slug: overdue-business');
   console.log('   Email: pedro@overduebiz.com');
   console.log('   Password: SenhaForte123!@#');
+  console.log('   Role: OWNER');
   console.log('   Status: ⚠️  Past Due');
 
-  console.log('\n7️⃣  Canceled Subscription:');
-  console.log('   Tenant ID: former-customer');
+  console.log('\n🔟  Former Customer (Canceled):');
+  console.log('   Tenant Slug: former-customer');
   console.log('   Email: lucas@formercustomer.com');
   console.log('   Password: SenhaForte123!@#');
+  console.log('   Role: OWNER');
   console.log('   Status: ❌ Canceled');
+
+  console.log('\n\n📝 REGRAS DE ROLES:');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log(
+    '• Candidatos: Não usam sistema de roles (role MEMBER por padrão)',
+  );
+  console.log('• Empresas: OWNER/ADMIN podem gerenciar roles');
+  console.log('• Hierarquia: OWNER > ADMIN > MANAGER > MEMBER > VIEWER');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 }
 
