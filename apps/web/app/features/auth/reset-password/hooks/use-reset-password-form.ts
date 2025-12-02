@@ -8,7 +8,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
 import { resetPassword } from "../http";
-import { FormResetPasswordData, formResetPasswordSchema } from "../schemas";
+import {
+  FormResetPasswordData,
+  formResetPasswordSchema,
+} from "../schemas/reset-password";
+import { APP_CONSTANTS } from "@/app/libs/constants";
 
 /**
  * Hook para gerenciar o formulário de Reset Password com React Query
@@ -40,10 +44,10 @@ export const useResetPasswordForm = () => {
     },
     onSuccess: (response) => {
       if (response.success) {
-        // Redirecionar para login após 2 segundos
+        // Redirecionar para login
         setTimeout(() => {
-          router.push("/auth/sign-in");
-        }, 2000);
+          router.push(APP_CONSTANTS.ROUTES.SIGN_IN);
+        }, APP_CONSTANTS.REDIRECT.AFTER_RESET_PASSWORD_MS);
       }
     },
   });

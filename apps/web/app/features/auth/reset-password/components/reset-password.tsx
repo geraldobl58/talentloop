@@ -12,7 +12,7 @@ import {
   Alert,
 } from "@mui/material";
 
-import { useResetPasswordForm } from "../hooks";
+import { useResetPasswordForm } from "../hooks/use-reset-password-form";
 
 /**
  * Componente de formulário para redefinição de senha

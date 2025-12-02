@@ -5,7 +5,7 @@ import {
   ResetPasswordRequest,
   ResetPasswordResponse,
   ResetPasswordApiResponse,
-} from "../types";
+} from "../types/reset-password";
 
 /**
  * Envia requisição de redefinição de senha
