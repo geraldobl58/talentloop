@@ -29,20 +29,22 @@ import {
   RemoveUserDto,
 } from './dto/roles.dto';
 import { RoleType } from '@prisma/client';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Roles')
 @Controller('roles')
 @UseGuards(JwtAuthGuard, TenantIsolationGuard, RolesGuard)
-@CompaniesOnly() // Roles management só faz sentido para empresas
+@CompaniesOnly() // Gestão de roles é exclusiva para empresas
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
   // ========================================
-  // Role Endpoints
+  // Role Endpoints (OWNER/ADMIN only)
   // ========================================
 
   @Get()
   @ApiBearerAuth()
+  @ApiOperation({ summary: 'List all roles' })
   @Roles(RoleType.OWNER, RoleType.ADMIN)
   async getAllRoles() {
     return this.rolesService.getAllRoles();
@@ -50,6 +52,7 @@ export class RolesController {
 
   @Get('permissions')
   @ApiBearerAuth()
+  @ApiOperation({ summary: 'List all permissions' })
   @Roles(RoleType.OWNER, RoleType.ADMIN)
   async getAllPermissions() {
     return this.rolesService.getAllPermissions();
@@ -57,6 +60,7 @@ export class RolesController {
 
   @Get('permissions/:module')
   @ApiBearerAuth()
+  @ApiOperation({ summary: 'List permissions by module' })
   @Roles(RoleType.OWNER, RoleType.ADMIN)
   async getPermissionsByModule(@Param('module') module: string) {
     return this.rolesService.getPermissionsByModule(module);
@@ -64,6 +68,7 @@ export class RolesController {
 
   @Patch(':roleId/permissions')
   @ApiBearerAuth()
+  @ApiOperation({ summary: 'Set role permissions (OWNER only)' })
   @Roles(RoleType.OWNER)
   async setRolePermissions(
     @Param('roleId') roleId: string,
@@ -78,25 +83,33 @@ export class RolesController {
 
   @Get('team')
   @ApiBearerAuth()
+  @ApiOperation({ summary: 'List tenant members' })
   @Roles(RoleType.OWNER, RoleType.ADMIN, RoleType.MANAGER)
   async getTenantMembers(@GetCurrentUser() user: CurrentUser) {
     return this.rolesService.getTenantMembers(user.tenantId);
   }
 
+  // ========================================
+  // Current User Endpoints (All company users)
+  // ========================================
+
   @Get('my-role')
   @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user role' })
   async getMyRole(@GetCurrentUser() user: CurrentUser) {
     return this.rolesService.getUserRole(user.userId, user.tenantId);
   }
 
   @Get('my-permissions')
   @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user permissions' })
   async getMyPermissions(@GetCurrentUser() user: CurrentUser) {
     return this.rolesService.getUserPermissions(user.userId, user.tenantId);
   }
 
   @Get('user/:userId')
   @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get user role by ID' })
   @Roles(RoleType.OWNER, RoleType.ADMIN)
   async getUserRole(
     @Param('userId') userId: string,
@@ -106,11 +119,12 @@ export class RolesController {
   }
 
   // ========================================
-  // User Role Management
+  // User Role Management (OWNER/ADMIN only)
   // ========================================
 
   @Post('assign')
   @ApiBearerAuth()
+  @ApiOperation({ summary: 'Assign role to user' })
   @Roles(RoleType.OWNER, RoleType.ADMIN)
   async assignRole(
     @Body() dto: AssignRoleDto,
@@ -127,6 +141,7 @@ export class RolesController {
 
   @Patch('change')
   @ApiBearerAuth()
+  @ApiOperation({ summary: 'Change user role' })
   @Roles(RoleType.OWNER, RoleType.ADMIN)
   async changeUserRole(
     @Body() dto: ChangeRoleDto,
@@ -143,6 +158,7 @@ export class RolesController {
   @Delete('remove')
   @ApiBearerAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Remove user from tenant' })
   @Roles(RoleType.OWNER, RoleType.ADMIN)
   async removeUserFromTenant(
     @Body() dto: RemoveUserDto,
