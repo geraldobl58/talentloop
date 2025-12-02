@@ -166,7 +166,8 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get current user profile',
-    description: 'Returns the profile information of the authenticated user',
+    description:
+      'Returns the profile information of the authenticated user including role',
   })
   @ApiResponse({
     status: 200,
@@ -177,19 +178,33 @@ export class AuthController {
     description: 'Unauthorized - Invalid or missing token',
   })
   async getProfile(@GetCurrentUser() user: CurrentUser) {
-    // Buscar dados completos do usuário do banco (incluindo avatar)
-    const fullUserData = await this.service.getUserById(user.userId);
+    // Buscar dados completos do usuário do banco (incluindo avatar e role)
+    const fullUserData = await this.service.getUserWithRole(
+      user.userId,
+      user.tenantId,
+    );
     const subscription = await this.service.getProfileWithPlan(user.tenantId);
+
+    // Candidatos não usam sistema de roles - não retornar role para eles
+    const isCandidate = user.tenantType === 'CANDIDATE';
 
     return {
       userId: fullUserData.id,
       email: fullUserData.email,
       name: fullUserData.name,
       avatar: fullUserData.avatar,
+      // Role só faz sentido para empresas
+      ...(isCandidate
+        ? {}
+        : {
+            role: fullUserData.role,
+            roleDescription: fullUserData.roleDescription,
+          }),
       tenantId: user.tenantId,
+      tenantType: user.tenantType,
       tenant: {
         id: user.tenantId,
-        plan: subscription?.plan?.name || 'STARTER',
+        plan: subscription?.plan?.name || 'FREE',
         planExpiresAt: subscription?.expiresAt?.toISOString() || null,
       },
     };
