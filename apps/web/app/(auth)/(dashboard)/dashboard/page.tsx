@@ -37,7 +37,7 @@ import {
   UserType,
   TenantType,
   USER_TYPE_CONFIGS,
-} from "@/app/features/auth/sign-in/types";
+} from "@/app/features/auth/sign-in/types/user-type";
 
 // ============================================
 // Helper: Map TenantType (from API) to UserType (for UI)
