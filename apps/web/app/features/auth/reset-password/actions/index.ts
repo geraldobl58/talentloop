@@ -1,7 +1,7 @@
 "use server";
 
 import { HTTPError } from "ky";
-import { formResetPasswordSchema } from "../schemas";
+import { formResetPasswordSchema } from "../schemas/reset-password";
 import { resetPassword } from "../http";
 
 export type ResetPasswordActionState = {
