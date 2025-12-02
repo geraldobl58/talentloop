@@ -56,6 +56,32 @@ export class ProfileService {
   }
 
   /**
+   * Obter perfil do usuário com role
+   */
+  async getProfileWithRole(userId: string, tenantId: string) {
+    const user = await this.authRepository.getUserWithRole(userId, tenantId);
+
+    if (!user) {
+      throw new NotFoundException(MESSAGES.ERRORS.USER_NOT_FOUND);
+    }
+
+    // Extrair a role do resultado
+    const role = user.userRoles[0]?.role?.name || 'MEMBER';
+    const roleDescription = user.userRoles[0]?.role?.description || null;
+
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      avatar: user.avatar,
+      isActive: user.isActive,
+      twoFactorEnabled: user.twoFactorEnabled,
+      role,
+      roleDescription,
+    };
+  }
+
+  /**
    * Obter perfil com plano
    */
   async getProfileWithPlan(tenantId: string) {
