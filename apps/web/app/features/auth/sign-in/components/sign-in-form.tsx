@@ -4,12 +4,16 @@ import { Controller, UseFormReturn } from "react-hook-form";
 
 import {
   Alert,
+  AlertTitle,
   Box,
   Button,
   CircularProgress,
+  Collapse,
+  InputAdornment,
   TextField,
   Typography,
 } from "@mui/material";
+import { Security as SecurityIcon } from "@mui/icons-material";
 
 import { FormSignInData } from "../schemas/sign-in";
 
@@ -42,19 +46,15 @@ export const SignInForm = ({
     <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-2">
       {/* Status Messages */}
       {errorMessage && (
-        <Box className="rounded-lg bg-red-50 border border-red-200 p-4">
-          <Typography className="text-sm font-medium text-red-900">
-            {errorMessage}
-          </Typography>
-        </Box>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {errorMessage}
+        </Alert>
       )}
 
       {successMessage && (
-        <Box className="rounded-lg bg-green-50 border border-green-200 p-4">
-          <Typography className="text-sm font-medium text-green-900">
-            {successMessage}
-          </Typography>
-        </Box>
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {successMessage}
+        </Alert>
       )}
 
       <Box className="flex flex-col gap-4">
@@ -69,7 +69,7 @@ export const SignInForm = ({
               type="email"
               label="Email"
               placeholder="seu@email.com"
-              disabled={isLoading}
+              disabled={isLoading || requiresTwoFactor}
               helperText={form.formState.errors.email?.message}
               error={!!form.formState.errors.email}
               {...field}
@@ -88,7 +88,7 @@ export const SignInForm = ({
               type="password"
               label="Senha"
               placeholder="••••••••"
-              disabled={isLoading}
+              disabled={isLoading || requiresTwoFactor}
               helperText={form.formState.errors.password?.message}
               error={!!form.formState.errors.password}
               {...field}
@@ -97,35 +97,53 @@ export const SignInForm = ({
         />
 
         {/* 2FA Code Field - shown when 2FA is required */}
-        {requiresTwoFactor && (
-          <Controller
-            control={form.control}
-            name="twoFactorToken"
-            render={({ field }) => (
-              <Box className="mb-8 space-y-4">
-                <Box>
-                  <Alert severity="warning">
-                    Código de autenticação de dois fatores.
-                  </Alert>
-                </Box>
-                <Box>
-                  <TextField
-                    fullWidth
-                    type="text"
-                    label="Código 2FA"
-                    placeholder="000000"
-                    disabled={isLoading}
-                    inputProps={{ maxLength: 6 }}
-                    {...field}
-                    onChange={(e) =>
-                      field.onChange(e.target.value.replace(/\D/g, ""))
-                    }
-                  />
-                </Box>
-              </Box>
-            )}
-          />
-        )}
+        <Collapse in={requiresTwoFactor}>
+          <Box sx={{ mt: 2 }}>
+            <Alert severity="warning" icon={<SecurityIcon />} sx={{ mb: 2 }}>
+              <AlertTitle>Autenticação de dois fatores</AlertTitle>
+              Digite o código de 6 dígitos do seu app autenticador
+            </Alert>
+
+            <Controller
+              control={form.control}
+              name="twoFactorToken"
+              render={({ field }) => (
+                <TextField
+                  fullWidth
+                  type="text"
+                  label="Código 2FA"
+                  placeholder="000000"
+                  disabled={isLoading}
+                  autoFocus={requiresTwoFactor}
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SecurityIcon color="action" />
+                        </InputAdornment>
+                      ),
+                    },
+                    htmlInput: {
+                      maxLength: 6,
+                      style: {
+                        textAlign: "center",
+                        fontSize: "1.5rem",
+                        fontWeight: "bold",
+                        letterSpacing: "0.5rem",
+                      },
+                    },
+                  }}
+                  helperText={form.formState.errors.twoFactorToken?.message}
+                  error={!!form.formState.errors.twoFactorToken}
+                  {...field}
+                  onChange={(e) =>
+                    field.onChange(e.target.value.replace(/\D/g, ""))
+                  }
+                />
+              )}
+            />
+          </Box>
+        </Collapse>
 
         {/* Submit Button */}
         <Button
@@ -133,18 +151,21 @@ export const SignInForm = ({
           type="submit"
           variant="contained"
           disabled={isLoading}
+          sx={{ mt: 2 }}
         >
           {isLoading ? (
             <Box className="flex items-center gap-2">
               <CircularProgress color="inherit" size={20} />
-              Entrando...
+              {requiresTwoFactor ? "Verificando..." : "Entrando..."}
             </Box>
+          ) : requiresTwoFactor ? (
+            "Verificar código"
           ) : (
             "Entrar"
           )}
         </Button>
 
-        {/* Sign Up Link */}
+        {/* Forgot Password Link */}
         <Box className="flex flex-col items-center gap-1 mt-4">
           <Typography variant="caption" className="text-xs text-gray-600">
             Esqueceu sua senha?{" "}
