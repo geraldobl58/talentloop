@@ -8,6 +8,7 @@ import {
   AppBar,
   Box,
   Chip,
+  CircularProgress,
   CssBaseline,
   Divider,
   Drawer,
@@ -30,7 +31,6 @@ import { candidateMenuItems } from "@/app/features/dashboard/candidate/component
 import { companyMenuItems } from "@/app/features/dashboard/company/components/company-menu-items";
 
 import { Logo } from "@/app/components/logo";
-import { DashboardLoadingSkeleton } from "@/app/components/dashboard-loading-skeleton";
 
 import { TenantType } from "@/app/shared/types/tenant-type";
 import { USER_TYPE_CONFIGS, UserType } from "@/app/shared/types/user-type";
@@ -72,8 +72,8 @@ const DashboardPage = () => {
   if (isLoading || !userType) {
     return (
       <Box className="min-h-screen bg-gray-50 p-6">
-        <Box className="max-w-7xl mx-auto">
-          <DashboardLoadingSkeleton />
+        <Box className="flex items-center justify-center h-screen">
+          <CircularProgress />
         </Box>
       </Box>
     );
