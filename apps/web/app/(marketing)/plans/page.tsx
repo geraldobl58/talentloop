@@ -8,7 +8,6 @@ import {
   Typography,
   Paper,
   Button,
-  Container,
   ToggleButtonGroup,
   ToggleButton,
 } from "@mui/material";
@@ -18,7 +17,6 @@ import {
   ArrowForward as ArrowForwardIcon,
 } from "@mui/icons-material";
 
-import { UserType } from "@/app/shared/types";
 import {
   PlanType,
   CandidatePlanType,
@@ -29,8 +27,9 @@ import {
   DEFAULT_CANDIDATE_PLAN,
   DEFAULT_COMPANY_PLAN,
 } from "@/app/libs/plans-data";
-import { PlanCard } from "@/app/features/plans";
 import { Heading } from "@/app/components/hading";
+import { PlanCard } from "@/app/features/plans/components/plan-card";
+import { UserType } from "@/app/shared/types/user-type";
 
 // =============================================
 // PLANS PAGE
