@@ -1,9 +1,4 @@
-import {
-  RoleType,
-  PermissionModule,
-  PermissionAction,
-  type PermissionString,
-} from "./types";
+import { RoleType, PermissionModule, type PermissionString } from "./types";
 
 /**
  * Role Hierarchy
