@@ -1,7 +1,7 @@
 "use client";
 
 import { Box } from "@mui/material";
-import { AuthContainer } from "@/app/features/auth/sign-in/components";
+import { AuthContainer } from "@/app/features/auth/sign-in/components/auth-container";
 import { ForgotPasswordForm } from "@/app/features/auth/forgot-password/components/forgot-password-form";
 import { useForgotPasswordForm } from "@/app/features/auth/forgot-password/hooks/use-forgot-password-form";
 
