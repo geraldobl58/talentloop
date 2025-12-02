@@ -5,23 +5,25 @@ import { useSearchParams } from "next/navigation";
 
 import { Box, Typography, Chip, CircularProgress } from "@mui/material";
 
+import { AuthContainer } from "@/app/features/auth/sign-in/components/auth-container";
 import {
-  AuthContainer,
-  AuthTabPanel,
   AuthTabs,
-} from "@/app/features/auth/sign-in/components";
-
-import { PlanType, UserType } from "@/app/features/auth/sign-up/types";
+  AuthTabPanel,
+} from "@/app/features/auth/sign-in/components/auth-tabs";
 
 import {
-  useSignUpCandidateForm,
-  useSignUpCompanyForm,
-} from "@/app/features/auth/sign-up/hooks";
+  PlanType,
+  UserType,
+  CandidatePlanType,
+  CompanyPlanType,
+} from "@/app/features/auth/sign-up/types/user-types";
+
 import { formatPrice, getPlanByValue } from "@/app/libs/plans-data";
-import {
-  CandidateSignUpForm,
-  CompanySignUpForm,
-} from "@/app/features/auth/sign-up/components/sign-up-form";
+
+import { useSignUpCandidateForm } from "@/app/features/auth/sign-up/hooks/use-sign-up-candidate-form";
+import { useSignUpCompanyForm } from "@/app/features/auth/sign-up/hooks/use-sign-up-company-form";
+import { SignUpCandidateForm } from "@/app/features/auth/sign-up/components/sign-up-candidate-form";
+import { SignUpCompanyForm } from "@/app/features/auth/sign-up/components/sign-up-company-form";
 
 const SignUpContent = () => {
   const searchParams = useSearchParams();
@@ -37,8 +39,10 @@ const SignUpContent = () => {
   }, [searchParams]);
 
   // Separate hooks for each user type
-  const candidateForm = useSignUpCandidateForm(selectedPlan);
-  const companyForm = useSignUpCompanyForm(selectedPlan);
+  const candidatePlan = selectedPlan as CandidatePlanType | null;
+  const companyPlan = selectedPlan as CompanyPlanType | null;
+  const candidateForm = useSignUpCandidateForm(candidatePlan);
+  const companyForm = useSignUpCompanyForm(companyPlan);
 
   const planData = selectedPlan ? getPlanByValue(selectedPlan) : null;
 
@@ -73,7 +77,7 @@ const SignUpContent = () => {
       <AuthTabs value={initialUserType} onChange={() => {}}>
         <AuthTabPanel value={UserType.CANDIDATE}>
           <Box>
-            <CandidateSignUpForm
+            <SignUpCandidateForm
               form={candidateForm.form}
               onSubmit={candidateForm.onSubmit}
               userType={UserType.CANDIDATE}
@@ -85,7 +89,7 @@ const SignUpContent = () => {
         </AuthTabPanel>
         <AuthTabPanel value={UserType.COMPANY}>
           <Box>
-            <CompanySignUpForm
+            <SignUpCompanyForm
               form={companyForm.form}
               onSubmit={companyForm.onSubmit}
               userType={UserType.COMPANY}
