@@ -79,6 +79,13 @@ export class AuthService {
   }
 
   /**
+   * Get user with role
+   */
+  async getUserWithRole(userId: string, tenantId: string) {
+    return this.profileService.getProfileWithRole(userId, tenantId);
+  }
+
+  /**
    * Get profile with plan
    */
   async getProfileWithPlan(tenantId: string) {
