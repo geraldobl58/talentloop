@@ -20,6 +20,7 @@
     "@mui/lab": "7.0.1-beta.19",
     "@mui/material": "^7.3.5",
     "@mui/material-nextjs": "^7.3.5",
+    "@talentloop/roles": "workspace:*",
     "@tanstack/react-query": "^5.90.8",
     "@tanstack/react-query-devtools": "^5.90.2",
     "@tanstack/react-table": "^8.21.3",
