@@ -31,10 +31,10 @@ export class TenantIsolationGuard implements CanActivate {
       throw new ForbiddenException('Usuário não autenticado corretamente');
     }
 
-    // Verificar se há restrição de tipo de tenant na rota
-    const requiredTenantType = this.reflector.get<TenantType>(
+    // Verificar se há restrição de tipo de tenant na rota OU na classe (controller)
+    const requiredTenantType = this.reflector.getAllAndOverride<TenantType>(
       'tenantType',
-      context.getHandler(),
+      [context.getHandler(), context.getClass()],
     );
 
     if (requiredTenantType && user.tenantType !== requiredTenantType) {
