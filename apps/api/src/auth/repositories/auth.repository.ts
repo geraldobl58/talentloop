@@ -167,6 +167,35 @@ export class AuthRepository {
     });
   }
 
+  /**
+   * Obter usuário com role (para exibir no frontend)
+   */
+  async getUserWithRole(userId: string, tenantId: string) {
+    return this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        avatar: true,
+        isActive: true,
+        twoFactorEnabled: true,
+        userRoles: {
+          where: { tenantId },
+          select: {
+            role: {
+              select: {
+                name: true,
+                description: true,
+              },
+            },
+          },
+          take: 1,
+        },
+      },
+    });
+  }
+
   // ==================== PASSWORD RESET ====================
 
   /**
