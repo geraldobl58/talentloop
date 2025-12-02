@@ -26,8 +26,9 @@ export default defineConfig({
   },
   plugins: [
     tsconfigPaths(),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     swc.vite({
       module: { type: 'es6' },
-    }),
+    }) as any,
   ],
 });
