@@ -2,11 +2,9 @@
 
 import { Box, Typography } from "@mui/material";
 
-import {
-  AuthContainer,
-  SignInForm,
-} from "@/app/features/auth/sign-in/components";
-import { useSignInForm } from "@/app/features/auth/sign-in/hooks";
+import { AuthContainer } from "@/app/features/auth/sign-in/components/auth-container";
+import { SignInForm } from "@/app/features/auth/sign-in/components/sign-in-form";
+import { useSignInForm } from "@/app/features/auth/sign-in/hooks/use-sign-in-form";
 
 /**
  * Página de signin unificada
