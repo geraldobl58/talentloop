@@ -36,11 +36,15 @@ import { TenantType } from "@/app/shared/types/tenant-type";
 import { USER_TYPE_CONFIGS, UserType } from "@/app/shared/types/user-type";
 
 import { mapTenantTypeToUserType } from "@/app/libs/map-tenant-type-to-user-type";
+import { useProfile } from "@/app/hooks/use-profile";
 
 const DashboardPage = () => {
   const router = useRouter();
   const [userType, setUserType] = useState<UserType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Buscar dados do perfil do usuário logado (nome, role, etc)
+  const { data: profile, isLoading: isProfileLoading } = useProfile();
 
   useEffect(() => {
     // Check for auth and tenant type (from API)
@@ -69,7 +73,7 @@ const DashboardPage = () => {
     router.push("/auth/sign-in");
   };
 
-  if (isLoading || !userType) {
+  if (isLoading || !userType || isProfileLoading) {
     return (
       <Box className="min-h-screen bg-gray-50 p-6">
         <Box className="flex items-center justify-center h-screen">
@@ -80,6 +84,9 @@ const DashboardPage = () => {
   }
 
   const config = USER_TYPE_CONFIGS[userType];
+
+  // Extrair primeiro nome para saudação
+  const firstName = profile?.name?.split(" ")[0] || "Usuário";
 
   const menuItems =
     userType === UserType.CANDIDATE ? candidateMenuItems : companyMenuItems;
@@ -136,9 +143,19 @@ const DashboardPage = () => {
           </List>
 
           <Box className="flex items-center justify-between gap-2 p-2">
-            <Typography variant="body2">
-              Olá, Jane Doe, bem-vinda de volta!
-            </Typography>
+            <Box>
+              {/* Função/Role só é exibida para empresas */}
+              {userType === UserType.COMPANY && profile?.role && (
+                <Box className="flex items-center gap-1 mb-0.5">
+                  Função:
+                  <Chip label={profile.role} size="small" />
+                </Box>
+              )}
+              <Typography variant="body2">
+                Olá, <span className="font-bold">{firstName}</span>,
+                bem-vindo(a) de volta!
+              </Typography>
+            </Box>
             <IconButton size="small" onClick={handleLogout}>
               <Logout />
             </IconButton>
