@@ -205,3 +205,78 @@ export function getAllRoles(): RoleType[] {
 export function getAssignableRoles(role: RoleType): RoleType[] {
   return [...ASSIGNABLE_ROLES[role]];
 }
+
+// ============================================
+// Frontend Protection Utilities
+// ============================================
+
+/**
+ * Check if user has one of the required roles
+ * Useful for protecting routes, menu items, and UI elements
+ *
+ * @example
+ * // Check if user can access admin features
+ * if (hasRequiredRole(user.role, [RoleType.OWNER, RoleType.ADMIN])) {
+ *   // Show admin menu
+ * }
+ */
+export function hasRequiredRole(
+  userRole: RoleType | null | undefined,
+  requiredRoles: RoleType[]
+): boolean {
+  if (!userRole) return false;
+  return requiredRoles.includes(userRole);
+}
+
+/**
+ * Check if user has at least the minimum role (uses hierarchy)
+ * OWNER > ADMIN > MANAGER > MEMBER > VIEWER
+ *
+ * @example
+ * // Check if user is at least a MANAGER
+ * if (hasMinimumRole(user.role, RoleType.MANAGER)) {
+ *   // Show manager features
+ * }
+ */
+export function hasMinimumRole(
+  userRole: RoleType | null | undefined,
+  minimumRole: RoleType
+): boolean {
+  if (!userRole) return false;
+  return isRoleAtLeast(userRole, minimumRole);
+}
+
+/**
+ * Filter menu items based on user role
+ *
+ * @example
+ * const visibleMenuItems = filterMenuByRole(menuItems, user.role);
+ */
+export function filterMenuByRole<T extends { roles?: RoleType[] }>(
+  items: T[],
+  userRole: RoleType | null | undefined
+): T[] {
+  return items.filter((item) => {
+    // If no roles specified, item is visible to all
+    if (!item.roles || item.roles.length === 0) {
+      return true;
+    }
+    // Check if user has one of the required roles
+    return hasRequiredRole(userRole, item.roles);
+  });
+}
+
+/**
+ * Check if a route/feature should be accessible
+ * Returns true if no roles required OR user has required role
+ */
+export function canAccess(
+  userRole: RoleType | null | undefined,
+  requiredRoles?: RoleType[]
+): boolean {
+  // No restriction - everyone can access
+  if (!requiredRoles || requiredRoles.length === 0) {
+    return true;
+  }
+  return hasRequiredRole(userRole, requiredRoles);
+}
