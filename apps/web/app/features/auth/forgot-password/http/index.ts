@@ -6,7 +6,7 @@ import {
   ForgotPasswordRequest,
   ForgotPasswordResponse,
   ForgotPasswordApiResponse,
-} from "../types";
+} from "../types/forgot-password";
 
 /**
  * Solicita reset de senha
