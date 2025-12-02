@@ -2,7 +2,11 @@ import { HTTPError } from "ky";
 
 import { api } from "@/app/libs/api-client";
 
-import { SignInRequest, SignInResponse, SignInApiResponse } from "../types";
+import {
+  SignInRequest,
+  SignInResponse,
+  SignInApiResponse,
+} from "../types/user-type";
 
 /**
  * Realiza o signin unificado

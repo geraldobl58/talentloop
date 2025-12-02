@@ -1,14 +1,11 @@
 import { env } from "../../../../libs/env";
+import { api } from "../../../../libs/api-client";
+
 import {
   CandidateSignUpRequest,
   CompanySignUpRequest,
   SignUpResponse,
-} from "../types";
-import { api } from "../../../../libs/api-client";
-
-// =============================================
-// CANDIDATE SIGN UP
-// =============================================
+} from "../types/user-types";
 
 /**
  * Realiza o signup de um candidato
@@ -33,10 +30,6 @@ export async function signUpCandidate(
 
   return response;
 }
-
-// =============================================
-// COMPANY SIGN UP
-// =============================================
 
 /**
  * Realiza o signup de uma empresa

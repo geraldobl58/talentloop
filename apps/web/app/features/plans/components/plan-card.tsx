@@ -1,21 +1,11 @@
-"use client";
-
 import { Box, Button, Paper, Typography } from "@mui/material";
 import { formatPrice, isFreePlan, PlanOption } from "@/app/libs/plans-data";
-
-// =============================================
-// TYPES
-// =============================================
 
 interface PlanCardProps {
   plan: PlanOption;
   isSelected: boolean;
   onSelect: () => void;
 }
-
-// =============================================
-// PLAN CARD COMPONENT
-// =============================================
 
 export const PlanCard = ({ plan, isSelected, onSelect }: PlanCardProps) => {
   const isFree = isFreePlan(plan);

@@ -9,9 +9,10 @@ import { useMutation } from "@tanstack/react-query";
 import { setCookie } from "cookies-next";
 import { HTTPError } from "ky";
 
-import { FormSignInData, formSignInSchema } from "../schemas";
+import { FormSignInData, formSignInSchema } from "../schemas/sign-in";
 import { signIn } from "../http";
-import { TenantType } from "../types";
+import { TenantType } from "../types/user-type";
+import { APP_CONSTANTS } from "@/app/libs/constants";
 
 /**
  * Hook para gerenciar o formulário de signin unificado com React Query
@@ -47,25 +48,25 @@ export const useSignInForm = () => {
 
       // Se 2FA foi verificado com sucesso ou não é necessário, salvar token
       if (response.token) {
-        // Store token in cookie
-        setCookie("access_token", response.token, {
-          maxAge: 60 * 60 * 24 * 7, // 7 days
+        // Store token in cookie (1 day - synced with backend JWT expiration)
+        setCookie(APP_CONSTANTS.COOKIES.ACCESS_TOKEN, response.token, {
+          maxAge: APP_CONSTANTS.AUTH.TOKEN_MAX_AGE_SECONDS,
           secure: process.env.NODE_ENV === "production",
           sameSite: "lax",
         });
 
         // Store tenant type from API
         const tenantType: TenantType = response.tenantType || "CANDIDATE";
-        setCookie("tenant_type", tenantType, {
-          maxAge: 60 * 60 * 24 * 7, // 7 days
+        setCookie(APP_CONSTANTS.COOKIES.TENANT_TYPE, tenantType, {
+          maxAge: APP_CONSTANTS.AUTH.TOKEN_MAX_AGE_SECONDS,
           secure: process.env.NODE_ENV === "production",
           sameSite: "lax",
         });
 
         // Redirect to dashboard
         setTimeout(() => {
-          router.push("/dashboard");
-        }, 800);
+          router.push(APP_CONSTANTS.ROUTES.DASHBOARD);
+        }, APP_CONSTANTS.REDIRECT.AFTER_LOGIN_MS);
       }
     },
     onError: async (error) => {

@@ -11,7 +11,7 @@ import {
   Typography,
 } from "@mui/material";
 
-import { FormSignInData } from "../schemas";
+import { FormSignInData } from "../schemas/sign-in";
 
 interface SignInFormProps {
   form: UseFormReturn<FormSignInData>;

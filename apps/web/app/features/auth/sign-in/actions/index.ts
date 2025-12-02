@@ -1,19 +1,12 @@
 "use server";
 
 import { HTTPError } from "ky";
-import { formSignInSchema } from "../schemas";
-import { signIn } from "../http";
-import { TenantType } from "../types";
 
-export type SignInActionState = {
-  success: boolean;
-  message?: string;
-  token?: string;
-  requiresTwoFactor?: boolean;
-  tenantType?: TenantType;
-  userId?: string;
-  errors?: Record<string, string[]> | null;
-};
+import { formSignInSchema } from "../schemas/sign-in";
+
+import { signIn } from "../http";
+
+import { SignInActionState } from "../types/sign-in-action-state";
 
 /**
  * Server Action para realizar signin do usuário

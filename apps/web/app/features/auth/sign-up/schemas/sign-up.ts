@@ -111,3 +111,17 @@ export const isCompanyData = (
 ): data is FormSignUpCompanyData => {
   return "companyName" in data && "domain" in data;
 };
+
+export const signUpCandidateSchema = z.object({
+  name: z.string().min(2).max(100),
+  email: z.string().email().min(5),
+  plan: candidatePlanSchema,
+});
+
+export const signUpCompanySchema = z.object({
+  companyName: z.string().min(2).max(100),
+  domain: z.string().min(3).max(50),
+  contactName: z.string().min(2).max(100),
+  contactEmail: z.string().email().min(5),
+  plan: companyPlanSchema,
+});

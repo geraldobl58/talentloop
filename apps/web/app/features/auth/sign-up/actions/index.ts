@@ -1,50 +1,12 @@
 "use server";
 
-import { z } from "zod";
 import { HTTPError } from "ky";
 
 import { signUpCandidate, signUpCompany } from "../http";
 
-// =============================================
-// INTERNAL SCHEMAS (with plan)
-// =============================================
+import { SignUpActionState } from "../types/sign-up-action-state";
 
-const candidatePlanSchema = z.enum(["FREE", "PRO", "PREMIUM"]);
-const companyPlanSchema = z.enum(["STARTUP", "BUSINESS", "ENTERPRISE"]);
-
-const signUpCandidateSchema = z.object({
-  name: z.string().min(2).max(100),
-  email: z.string().email().min(5),
-  plan: candidatePlanSchema,
-});
-
-const signUpCompanySchema = z.object({
-  companyName: z.string().min(2).max(100),
-  domain: z.string().min(3).max(50),
-  contactName: z.string().min(2).max(100),
-  contactEmail: z.string().email().min(5),
-  plan: companyPlanSchema,
-});
-
-// =============================================
-// TYPES
-// =============================================
-
-export type SignUpActionState = {
-  success: boolean;
-  message?: string;
-  checkoutUrl?: string;
-  isFree?: boolean;
-  isTrial?: boolean;
-  tenantSlug?: string;
-  tenantId?: string;
-  token?: string;
-  errors?: Record<string, string[]> | null;
-};
-
-// =============================================
-// CANDIDATE SIGN UP ACTION
-// =============================================
+import { signUpCandidateSchema, signUpCompanySchema } from "../schemas/sign-up";
 
 /**
  * Server Action para cadastro de candidato
@@ -134,10 +96,6 @@ export async function signUpCandidateAction(
     };
   }
 }
-
-// =============================================
-// COMPANY SIGN UP ACTION
-// =============================================
 
 /**
  * Server Action para cadastro de empresa
@@ -232,23 +190,4 @@ export async function signUpCompanyAction(
       message: "Erro inesperado. Tente novamente mais tarde.",
     };
   }
-}
-
-// =============================================
-// LEGACY ACTION (for backward compatibility)
-// =============================================
-
-/**
- * @deprecated Use signUpCandidateAction or signUpCompanyAction instead
- */
-export async function signUpAction(
-  formData: FormData
-): Promise<SignUpActionState> {
-  const userType = formData.get("userType") as string;
-
-  if (userType === "candidate") {
-    return signUpCandidateAction(formData);
-  }
-
-  return signUpCompanyAction(formData);
 }
