@@ -27,7 +27,7 @@ export const useProfile = () => {
   return useQuery({
     queryKey: ["profile"],
     queryFn: fetchProfile,
-    staleTime: 1000 * 60 * 5, // 5 minutos
+    staleTime: 0, // always fresh
     retry: false,
   });
 };
