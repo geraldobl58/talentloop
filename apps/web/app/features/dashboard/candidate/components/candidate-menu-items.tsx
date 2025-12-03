@@ -1,4 +1,5 @@
 import {
+  AddCard as AddCardIcon,
   Bookmark as BookmarkIcon,
   Dashboard as DashboardIcon,
   Description as DescriptionIcon,
@@ -19,5 +20,6 @@ export const candidateMenuItems: MenuItem[] = [
   { label: "Candidaturas", icon: <DescriptionIcon />, href: "/applications" },
   { label: "Vagas Salvas", icon: <BookmarkIcon />, href: "/saved-jobs" },
   { label: "Entrevistas", icon: <EventIcon />, href: "/interviews" },
+  { label: "Meu Plano", icon: <AddCardIcon />, href: "/my-plans" },
   { label: "Meu Perfil", icon: <PersonIcon />, href: "/profile" },
 ];
