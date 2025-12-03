@@ -1,5 +1,3 @@
-"use client";
-
 import { createTheme, ThemeOptions } from "@mui/material/styles";
 
 // Paleta violeta/roxo/azul para TalentLoop
