@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PlansService } from './plans.service';
-import { PrismaService } from '@/libs/prisma/prisma.service';
+import { PlanRepository } from './repositories/plan.repository';
 import { StripeService } from '@/stripe/services/stripe.service';
 import { EmailService } from '@/email/services/email.service';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 // Mock @prisma/client to provide the enums
 vi.mock('@prisma/client', async (importOriginal) => {
-  const actual = (await importOriginal()) as Record<string, unknown>;
+  const actual = await importOriginal();
   return {
     ...actual,
     SubStatus: {
@@ -52,27 +52,20 @@ const SubscriptionAction = {
 describe('PlansService', () => {
   let service: PlansService;
 
-  const mockPrismaService = {
-    plan: {
-      findMany: vi.fn(),
-      findUnique: vi.fn(),
-      findFirst: vi.fn(),
-    },
-    subscription: {
-      findUnique: vi.fn(),
-      update: vi.fn(),
-      create: vi.fn(),
-    },
-    tenant: {
-      findUnique: vi.fn(),
-    },
-    user: {
-      findFirst: vi.fn(),
-      count: vi.fn(),
-    },
-    subscriptionHistory: {
-      create: vi.fn(),
-    },
+  const mockPlanRepository = {
+    getAllPlans: vi.fn(),
+    findPlanByName: vi.fn(),
+    findPlanById: vi.fn(),
+    findPlanByStripePriceId: vi.fn(),
+    getCurrentSubscription: vi.fn(),
+    getSubscriptionWithHistory: vi.fn(),
+    getTenantById: vi.fn(),
+    getActiveAdminUser: vi.fn(),
+    countActiveUsers: vi.fn(),
+    cancelSubscription: vi.fn(),
+    reactivateSubscription: vi.fn(),
+    upgradePlan: vi.fn(),
+    recordHistory: vi.fn(),
   };
 
   const mockStripeService = {
@@ -94,7 +87,7 @@ describe('PlansService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PlansService,
-        { provide: PrismaService, useValue: mockPrismaService },
+        { provide: PlanRepository, useValue: mockPlanRepository },
         { provide: StripeService, useValue: mockStripeService },
         { provide: EmailService, useValue: mockEmailService },
       ],
@@ -110,14 +103,48 @@ describe('PlansService', () => {
         { id: '2', name: 'PROFESSIONAL', price: 99 },
         { id: '3', name: 'ENTERPRISE', price: 299 },
       ];
-      mockPrismaService.plan.findMany.mockResolvedValue(mockPlans);
+      mockPlanRepository.getAllPlans.mockResolvedValue(mockPlans);
 
       const result = await service.getAllPlans();
 
       expect(result).toEqual(mockPlans);
-      expect(mockPrismaService.plan.findMany).toHaveBeenCalledWith({
-        orderBy: { price: 'asc' },
-      });
+      expect(mockPlanRepository.getAllPlans).toHaveBeenCalled();
+    });
+
+    it('should filter plans for CANDIDATE tenantType', async () => {
+      const mockPlans = [
+        { id: '1', name: 'FREE', price: 0 },
+        { id: '2', name: 'PRO', price: 29 },
+        { id: '3', name: 'PREMIUM', price: 79 },
+        { id: '4', name: 'STARTER', price: 0 },
+      ];
+      mockPlanRepository.getAllPlans.mockResolvedValue(mockPlans);
+
+      const result = await service.getAllPlans('CANDIDATE');
+
+      expect(result.length).toBe(3);
+      expect(
+        result.every((p) => ['FREE', 'PRO', 'PREMIUM'].includes(p.name)),
+      ).toBe(true);
+    });
+
+    it('should filter plans for COMPANY tenantType', async () => {
+      const mockPlans = [
+        { id: '1', name: 'FREE', price: 0 },
+        { id: '2', name: 'STARTER', price: 0 },
+        { id: '3', name: 'PROFESSIONAL', price: 99 },
+        { id: '4', name: 'ENTERPRISE', price: 299 },
+      ];
+      mockPlanRepository.getAllPlans.mockResolvedValue(mockPlans);
+
+      const result = await service.getAllPlans('COMPANY');
+
+      expect(result.length).toBe(3);
+      expect(
+        result.every((p) =>
+          ['STARTER', 'PROFESSIONAL', 'ENTERPRISE'].includes(p.name),
+        ),
+      ).toBe(true);
     });
   });
 
@@ -140,7 +167,7 @@ describe('PlansService', () => {
           description: 'Plan description',
         },
       };
-      mockPrismaService.subscription.findUnique.mockResolvedValue(
+      mockPlanRepository.getCurrentSubscription.mockResolvedValue(
         mockSubscription,
       );
 
@@ -152,7 +179,7 @@ describe('PlansService', () => {
     });
 
     it('should throw NotFoundException if plan not found', async () => {
-      mockPrismaService.subscription.findUnique.mockResolvedValue(null);
+      mockPlanRepository.getCurrentSubscription.mockResolvedValue(null);
 
       await expect(service.getCurrentPlan('tenant-1')).rejects.toThrow(
         NotFoundException,
@@ -167,21 +194,22 @@ describe('PlansService', () => {
         tenantId: 'tenant-1',
         status: SubStatus.ACTIVE,
         stripeSubscriptionId: 'stripe-sub-1',
+        expiresAt: new Date('2025-12-31'),
         plan: { id: 'plan-1', name: 'PROFESSIONAL', price: 99 },
       };
-      mockPrismaService.subscription.findUnique.mockResolvedValue(
+      mockPlanRepository.getCurrentSubscription.mockResolvedValue(
         mockSubscription,
       );
-      mockPrismaService.subscription.update.mockResolvedValue({
+      mockPlanRepository.cancelSubscription.mockResolvedValue({
         ...mockSubscription,
         status: SubStatus.CANCELED,
       });
       mockStripeService.cancelSubscription.mockResolvedValue({});
-      mockPrismaService.tenant.findUnique.mockResolvedValue({
+      mockPlanRepository.getTenantById.mockResolvedValue({
         id: 'tenant-1',
         name: 'Test Company',
       });
-      mockPrismaService.user.findFirst.mockResolvedValue({
+      mockPlanRepository.getActiveAdminUser.mockResolvedValue({
         id: 'user-1',
         name: 'Admin User',
         email: 'admin@test.com',
@@ -198,7 +226,7 @@ describe('PlansService', () => {
     });
 
     it('should throw NotFoundException if subscription not found', async () => {
-      mockPrismaService.subscription.findUnique.mockResolvedValue(null);
+      mockPlanRepository.getCurrentSubscription.mockResolvedValue(null);
 
       await expect(service.cancelPlan('tenant-1')).rejects.toThrow(
         NotFoundException,
@@ -212,7 +240,7 @@ describe('PlansService', () => {
         status: SubStatus.CANCELED,
         plan: { id: 'plan-1', name: 'PROFESSIONAL', price: 99 },
       };
-      mockPrismaService.subscription.findUnique.mockResolvedValue(
+      mockPlanRepository.getCurrentSubscription.mockResolvedValue(
         mockSubscription,
       );
 
@@ -241,10 +269,10 @@ describe('PlansService', () => {
         expiresAt: new Date('2025-01-01'),
         startedAt: new Date('2024-01-01'),
       };
-      mockPrismaService.subscription.findUnique.mockResolvedValue(
+      mockPlanRepository.getCurrentSubscription.mockResolvedValue(
         mockSubscription,
       );
-      mockPrismaService.subscription.update.mockResolvedValue({
+      mockPlanRepository.reactivateSubscription.mockResolvedValue({
         ...mockSubscription,
         status: SubStatus.ACTIVE,
         canceledAt: null,
@@ -265,7 +293,7 @@ describe('PlansService', () => {
         status: SubStatus.ACTIVE,
         plan: { id: 'plan-1', name: 'PROFESSIONAL', price: 99 },
       };
-      mockPrismaService.subscription.findUnique.mockResolvedValue(
+      mockPlanRepository.getCurrentSubscription.mockResolvedValue(
         mockSubscription,
       );
 
@@ -280,9 +308,10 @@ describe('PlansService', () => {
       const futureDate = new Date();
       futureDate.setMonth(futureDate.getMonth() + 1);
 
-      mockPrismaService.subscription.findUnique.mockResolvedValue({
+      mockPlanRepository.getCurrentSubscription.mockResolvedValue({
         status: SubStatus.ACTIVE,
         expiresAt: futureDate,
+        plan: { id: 'plan-1' },
       });
 
       const result = await service.validateSubscription('tenant-1');
@@ -291,9 +320,10 @@ describe('PlansService', () => {
     });
 
     it('should return false for canceled subscription', async () => {
-      mockPrismaService.subscription.findUnique.mockResolvedValue({
+      mockPlanRepository.getCurrentSubscription.mockResolvedValue({
         status: SubStatus.CANCELED,
         expiresAt: new Date('2025-12-31'),
+        plan: { id: 'plan-1' },
       });
 
       const result = await service.validateSubscription('tenant-1');
@@ -302,9 +332,10 @@ describe('PlansService', () => {
     });
 
     it('should return false for expired subscription', async () => {
-      mockPrismaService.subscription.findUnique.mockResolvedValue({
+      mockPlanRepository.getCurrentSubscription.mockResolvedValue({
         status: SubStatus.ACTIVE,
         expiresAt: new Date('2020-01-01'),
+        plan: { id: 'plan-1' },
       });
 
       const result = await service.validateSubscription('tenant-1');
@@ -313,7 +344,7 @@ describe('PlansService', () => {
     });
 
     it('should return false if subscription not found', async () => {
-      mockPrismaService.subscription.findUnique.mockResolvedValue(null);
+      mockPlanRepository.getCurrentSubscription.mockResolvedValue(null);
 
       const result = await service.validateSubscription('tenant-1');
 
@@ -323,7 +354,7 @@ describe('PlansService', () => {
 
   describe('getCurrentCompany', () => {
     it('should return company info', async () => {
-      mockPrismaService.tenant.findUnique.mockResolvedValue({
+      mockPlanRepository.getTenantById.mockResolvedValue({
         id: 'tenant-1',
         name: 'Test Company',
         slug: 'test-company',
@@ -338,7 +369,7 @@ describe('PlansService', () => {
     });
 
     it('should throw NotFoundException if tenant not found', async () => {
-      mockPrismaService.tenant.findUnique.mockResolvedValue(null);
+      mockPlanRepository.getTenantById.mockResolvedValue(null);
 
       await expect(service.getCurrentCompany('tenant-1')).rejects.toThrow(
         NotFoundException,
@@ -348,8 +379,8 @@ describe('PlansService', () => {
 
   describe('getPlanUsage', () => {
     it('should return usage statistics', async () => {
-      mockPrismaService.user.count.mockResolvedValue(5);
-      mockPrismaService.subscription.findUnique.mockResolvedValue({
+      mockPlanRepository.countActiveUsers.mockResolvedValue(5);
+      mockPlanRepository.getCurrentSubscription.mockResolvedValue({
         plan: { maxUsers: 10 },
       });
 
@@ -360,8 +391,8 @@ describe('PlansService', () => {
     });
 
     it('should throw NotFoundException if plan not found', async () => {
-      mockPrismaService.user.count.mockResolvedValue(5);
-      mockPrismaService.subscription.findUnique.mockResolvedValue(null);
+      mockPlanRepository.countActiveUsers.mockResolvedValue(5);
+      mockPlanRepository.getCurrentSubscription.mockResolvedValue(null);
 
       await expect(service.getPlanUsage('tenant-1')).rejects.toThrow(
         NotFoundException,
@@ -371,8 +402,9 @@ describe('PlansService', () => {
 
   describe('createBillingPortalSession', () => {
     it('should create billing portal session', async () => {
-      mockPrismaService.subscription.findUnique.mockResolvedValue({
+      mockPlanRepository.getCurrentSubscription.mockResolvedValue({
         stripeCustomerId: 'cus_123',
+        plan: { id: 'plan-1' },
       });
       mockStripeService.createBillingPortalSession.mockResolvedValue(
         'https://billing.stripe.com/xxx',
@@ -391,8 +423,9 @@ describe('PlansService', () => {
     });
 
     it('should throw BadRequestException if no Stripe customer', async () => {
-      mockPrismaService.subscription.findUnique.mockResolvedValue({
+      mockPlanRepository.getCurrentSubscription.mockResolvedValue({
         stripeCustomerId: null,
+        plan: { id: 'plan-1' },
       });
 
       await expect(
@@ -403,7 +436,7 @@ describe('PlansService', () => {
 
   describe('checkUsageLimits', () => {
     it('should return usage limits', async () => {
-      mockPrismaService.subscription.findUnique.mockResolvedValue({
+      mockPlanRepository.getCurrentSubscription.mockResolvedValue({
         plan: {
           maxContacts: 1000,
           hasAPI: true,
@@ -439,7 +472,7 @@ describe('PlansService', () => {
           },
         ],
       };
-      mockPrismaService.subscription.findUnique.mockResolvedValue(
+      mockPlanRepository.getSubscriptionWithHistory.mockResolvedValue(
         mockSubscription,
       );
 
@@ -452,7 +485,7 @@ describe('PlansService', () => {
     });
 
     it('should throw NotFoundException if subscription not found', async () => {
-      mockPrismaService.subscription.findUnique.mockResolvedValue(null);
+      mockPlanRepository.getSubscriptionWithHistory.mockResolvedValue(null);
 
       await expect(service.getPlanHistory('tenant-1')).rejects.toThrow(
         NotFoundException,
