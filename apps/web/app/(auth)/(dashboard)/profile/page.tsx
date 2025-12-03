@@ -1,26 +1,27 @@
 "use client";
 
 import { useState } from "react";
-
 import TabContext from "@mui/lab/TabContext";
 import TabList from "@mui/lab/TabList";
 import TabPanel from "@mui/lab/TabPanel";
 import { Box, Tab, Paper, CircularProgress } from "@mui/material";
 import { Person, PhotoCamera, Lock, Security } from "@mui/icons-material";
 
-import { ProfileDataTab } from "@/app/features/profile/components/profile-data-tab";
-import { ProfileAvatarTab } from "@/app/features/profile/components/profile-avatar-tab";
-import { ProfilePasswordTab } from "@/app/features/profile/components/profile-password-tab";
-import { Profile2FATab } from "@/app/features/profile/components/profile-2fa-tab";
-
 import { useProfile } from "@/app/hooks/use-profile";
 
+import {
+  ProfileDataTab,
+  ProfileAvatarTab,
+  ProfilePasswordTab,
+  Profile2FATab,
+} from "@/app/features/profile/components";
+
 const ProfilePage = () => {
-  const [value, setValue] = useState("1");
+  const [activeTab, setActiveTab] = useState("data");
   const { data: profile, isLoading } = useProfile();
 
-  const handleChange = (_event: React.SyntheticEvent, newValue: string) => {
-    setValue(newValue);
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: string) => {
+    setActiveTab(newValue);
   };
 
   if (isLoading) {
@@ -32,55 +33,55 @@ const ProfilePage = () => {
   }
 
   return (
-    <Paper elevation={0} className="p-0">
-      <TabContext value={value}>
+    <Paper elevation={0}>
+      <TabContext value={activeTab}>
         <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
           <TabList
-            onChange={handleChange}
+            onChange={handleTabChange}
             aria-label="Configurações de perfil"
             variant="scrollable"
             scrollButtons="auto"
           >
             <Tab
               label="Meus Dados"
-              value="1"
+              value="data"
               icon={<Person />}
               iconPosition="start"
             />
             <Tab
               label="Meu Avatar"
-              value="2"
+              value="avatar"
               icon={<PhotoCamera />}
               iconPosition="start"
             />
             <Tab
               label="Alterar Senha"
-              value="3"
+              value="password"
               icon={<Lock />}
               iconPosition="start"
             />
             <Tab
               label="Autenticação 2FA"
-              value="4"
+              value="2fa"
               icon={<Security />}
               iconPosition="start"
             />
           </TabList>
         </Box>
 
-        <TabPanel value="1">
+        <TabPanel value="data">
           <ProfileDataTab profile={profile} />
         </TabPanel>
 
-        <TabPanel value="2">
+        <TabPanel value="avatar">
           <ProfileAvatarTab profile={profile} />
         </TabPanel>
 
-        <TabPanel value="3">
+        <TabPanel value="password">
           <ProfilePasswordTab />
         </TabPanel>
 
-        <TabPanel value="4">
+        <TabPanel value="2fa">
           <Profile2FATab />
         </TabPanel>
       </TabContext>
