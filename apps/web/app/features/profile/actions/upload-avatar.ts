@@ -4,7 +4,7 @@ import { HTTPError } from "ky";
 
 import { avatarUploadSchema } from "../schemas/upload-avatar";
 
-import { uploadAvatar } from "../hooks/upload-avatar";
+import { uploadAvatar } from "../http/upload-avatar";
 
 export type UploadAvatarActionState = {
   success: boolean;
