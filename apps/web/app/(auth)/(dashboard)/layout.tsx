@@ -8,7 +8,7 @@ import { Box, CircularProgress, CssBaseline, Toolbar } from "@mui/material";
 
 import { filterMenuByRole, RoleType } from "@talentloop/roles";
 
-import { APP_CONSTANTS } from "@/app/libs/constants";
+import { APP_CONSTANTS, PAGE_TITLES } from "@/app/libs/constants";
 import { HeaderAppBar } from "@/app/components/header-app-bar";
 import { SidebarDrawer } from "@/app/components/sidebar-drawer";
 
@@ -20,39 +20,6 @@ import { USER_TYPE_CONFIGS, UserType } from "@/app/shared/types/user-type";
 
 import { mapTenantTypeToUserType } from "@/app/libs/map-tenant-type-to-user-type";
 import { useProfile } from "@/app/hooks/use-profile";
-
-// Títulos das páginas baseado na rota
-const PAGE_TITLES: Record<string, { title: string; description: string }> = {
-  "/dashboard": { title: "Dashboard", description: "Visão geral" },
-  "/profile": {
-    title: "Meu Perfil",
-    description: "Gerencie suas informações pessoais",
-  },
-  "/jobs": { title: "Vagas", description: "Gerencie as vagas da empresa" },
-  "/candidates": { title: "Candidatos", description: "Gerencie os candidatos" },
-  "/processes": {
-    title: "Processos",
-    description: "Gerencie os processos seletivos",
-  },
-  "/reports": {
-    title: "Relatórios",
-    description: "Visualize relatórios e métricas",
-  },
-  "/company": { title: "Empresa", description: "Informações da empresa" },
-  "/users": {
-    title: "Usuários",
-    description: "Gerencie os usuários da empresa",
-  },
-  "/applications": { title: "Candidaturas", description: "Suas candidaturas" },
-  "/saved-jobs": {
-    title: "Vagas Salvas",
-    description: "Vagas que você salvou",
-  },
-  "/interviews": {
-    title: "Entrevistas",
-    description: "Suas entrevistas agendadas",
-  },
-};
 
 export default function DashboardLayout({
   children,
