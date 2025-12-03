@@ -117,7 +117,6 @@ export const ProfileAvatarTab = ({ profile }: ProfileAvatarTabProps) => {
       <Card variant="outlined">
         <CardContent>
           <Typography variant="h6" className="mb-4 flex items-center gap-2">
-            <PhotoCamera color="primary" />
             Foto de Perfil
           </Typography>
 
