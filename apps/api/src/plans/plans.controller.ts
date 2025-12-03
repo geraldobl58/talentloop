@@ -41,14 +41,15 @@ export class PlansController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get all available plans',
-    description: 'Returns all available subscription plans for signup',
+    description:
+      'Returns all available subscription plans for the current user type (candidate or company)',
   })
   @ApiResponse({
     status: 200,
     description: 'Available plans retrieved successfully',
   })
-  async getAvailablePlans() {
-    return await this.plansService.getAllPlans();
+  async getAvailablePlans(@GetCurrentUser() user: CurrentUser) {
+    return await this.plansService.getAllPlans(user.tenantType);
   }
 
   @Get('info')
