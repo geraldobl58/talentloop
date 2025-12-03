@@ -4,7 +4,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { PrismaService } from '@/libs/prisma/prisma.service';
+import { PlanRepository } from './repositories/plan.repository';
 import { StripeService } from '@/stripe/services/stripe.service';
 import { EmailService } from '@/email/services/email.service';
 import { PlanUpgradeDto } from './dto/plan-upgrade.dto';
@@ -19,25 +19,28 @@ import {
   SubscriptionActionEnum,
   PlanHistoryDetailDto,
 } from './dto/subscription-history.dto';
-import { SubStatus, SubscriptionAction } from '@prisma/client';
+import {
+  SubStatus,
+  SubscriptionAction,
+  Plan,
+  Subscription,
+} from '@prisma/client';
+
+type SubscriptionWithPlan = Subscription & { plan: Plan };
 
 @Injectable()
 export class PlansService {
   private readonly logger = new Logger(PlansService.name);
 
   constructor(
-    private prisma: PrismaService,
-    private stripeService: StripeService,
-    private emailService: EmailService,
+    private readonly planRepository: PlanRepository,
+    private readonly stripeService: StripeService,
+    private readonly emailService: EmailService,
   ) {}
 
   async getCurrentPlan(tenantId: string): Promise<PlanInfoDto> {
-    const subscription = await this.prisma.subscription.findUnique({
-      where: { tenantId },
-      include: {
-        plan: true,
-      },
-    });
+    const subscription =
+      await this.planRepository.getCurrentSubscription(tenantId);
 
     if (!subscription) {
       throw new NotFoundException('Plano não encontrado para este tenant');
@@ -54,32 +57,27 @@ export class PlansService {
       dto,
     });
 
-    // Buscar assinatura atual
-    const currentSubscription = await this.prisma.subscription.findUnique({
-      where: { tenantId },
-      include: { plan: true },
-    });
+    const currentSubscription =
+      await this.planRepository.getCurrentSubscription(tenantId);
 
     if (!currentSubscription) {
       throw new NotFoundException('Assinatura não encontrada');
     }
 
-    let newPlan;
-
     this.logger.log(
       `[upgradePlan] stripePriceId: ${dto.stripePriceId}, newPlan: ${dto.newPlan}`,
     );
 
-    // Determinar se é upgrade via Stripe ou método tradicional
+    // Upgrade via Stripe
     if (dto.stripePriceId) {
-      // Upgrade via Stripe
       this.logger.log(
         `[upgradePlan] Usando upgrade via Stripe com priceId: ${dto.stripePriceId}`,
       );
       return this.upgradeSubscription(tenantId, dto.stripePriceId);
-    } else if (dto.newPlan) {
-      // Método tradicional
-      // Verificar se o novo plano é superior ao atual
+    }
+
+    // Upgrade tradicional
+    if (dto.newPlan) {
       const currentPlanLevel = this.getPlanLevel(currentSubscription.plan.name);
       const newPlanLevel = this.getPlanLevel(dto.newPlan);
 
@@ -89,16 +87,13 @@ export class PlansService {
         );
       }
 
-      // Buscar o novo plano
-      newPlan = await this.prisma.plan.findUnique({
-        where: { name: dto.newPlan },
-      });
+      const newPlan = await this.planRepository.findPlanByName(dto.newPlan);
 
       if (!newPlan) {
         throw new NotFoundException('Plano não encontrado');
       }
 
-      // Calcular nova data de expiração (manter o tempo restante + 30 dias)
+      // Calcular nova data de expiração
       const now = new Date();
       const currentExpiresAt = currentSubscription.expiresAt || now;
       const timeRemaining = currentExpiresAt.getTime() - now.getTime();
@@ -106,16 +101,11 @@ export class PlansService {
         now.getTime() + timeRemaining + 30 * 24 * 60 * 60 * 1000,
       );
 
-      // Atualizar assinatura
-      const updatedSubscription = await this.prisma.subscription.update({
-        where: { tenantId },
-        data: {
-          planId: newPlan.id,
-          expiresAt: newExpiresAt,
-          renewedAt: now,
-        },
-        include: { plan: true },
-      });
+      const updatedSubscription = await this.planRepository.upgradePlan(
+        tenantId,
+        newPlan.id,
+        newExpiresAt,
+      );
 
       // Registrar no histórico
       const action =
@@ -142,24 +132,18 @@ export class PlansService {
         newPlan: this.mapToPlanInfoDto(newPlan, updatedSubscription),
         nextBillingDate: newExpiresAt.toISOString(),
       };
-    } else {
-      this.logger.error(
-        `[upgradePlan] Nenhum stripePriceId ou newPlan fornecido`,
-        {
-          stripePriceId: dto.stripePriceId,
-          newPlan: dto.newPlan,
-        },
-      );
-      throw new BadRequestException('Especifique newPlan ou stripePriceId');
     }
+
+    this.logger.error(
+      `[upgradePlan] Nenhum stripePriceId ou newPlan fornecido`,
+      { stripePriceId: dto.stripePriceId, newPlan: dto.newPlan },
+    );
+    throw new BadRequestException('Especifique newPlan ou stripePriceId');
   }
 
   async cancelPlan(tenantId: string): Promise<PlanCancelResponseDto> {
-    // Buscar assinatura atual
-    const subscription = await this.prisma.subscription.findUnique({
-      where: { tenantId },
-      include: { plan: true },
-    });
+    const subscription =
+      await this.planRepository.getCurrentSubscription(tenantId);
 
     if (!subscription) {
       throw new NotFoundException('Assinatura não encontrada');
@@ -169,30 +153,23 @@ export class PlansService {
       throw new BadRequestException('Assinatura já está cancelada');
     }
 
-    // Cancelar no Stripe se existir stripeSubscriptionId
+    // Cancelar no Stripe se existir
     if (subscription.stripeSubscriptionId) {
       try {
         await this.stripeService.cancelSubscription(
           subscription.stripeSubscriptionId,
         );
       } catch (error) {
-        // Log do erro, mas não falha se o Stripe retornar erro
         this.logger.error('Erro ao cancelar assinatura no Stripe:', {
-          error: error.message,
+          error: (error as Error).message,
           subscriptionId: subscription.stripeSubscriptionId,
           tenantId,
         });
       }
     }
 
-    // Cancelar assinatura no banco local
-    await this.prisma.subscription.update({
-      where: { tenantId },
-      data: {
-        status: SubStatus.CANCELED,
-        canceledAt: new Date(),
-      },
-    });
+    // Cancelar no banco local
+    await this.planRepository.cancelSubscription(tenantId);
 
     // Registrar no histórico
     await this.recordSubscriptionHistory(
@@ -208,50 +185,8 @@ export class PlansService {
       'user',
     );
 
-    // Enviar email de cancelamento (não bloqueia se falhar)
-    try {
-      const tenant = await this.prisma.tenant.findUnique({
-        where: { id: tenantId },
-      });
-
-      const adminUser = await this.prisma.user.findFirst({
-        where: { tenantId, isActive: true },
-      });
-
-      if (tenant && adminUser) {
-        this.logger.log(`[cancelPlan] Enviando email de cancelamento`, {
-          tenantId,
-          email: adminUser.email,
-        });
-
-        // Enviar email de cancelamento
-        const expirationDate =
-          subscription.expiresAt?.toISOString() ?? new Date().toISOString();
-        await this.emailService
-          .sendCancellationEmail({
-            companyName: tenant.name,
-            contactName: adminUser.name,
-            contactEmail: adminUser.email,
-            planName: subscription.plan.name || 'Plano',
-            expirationDate,
-          })
-          .catch((error) => {
-            this.logger.error(
-              `[cancelPlan] Erro ao enviar email de cancelamento`,
-              {
-                error: error.message,
-                tenantId,
-                email: adminUser.email,
-              },
-            );
-          });
-      }
-    } catch (error) {
-      this.logger.error(`[cancelPlan] Erro ao preparar dados do email`, {
-        error: error.message,
-        tenantId,
-      });
-    }
+    // Enviar email de cancelamento
+    await this.sendCancellationEmail(tenantId, subscription);
 
     return {
       success: true,
@@ -262,11 +197,8 @@ export class PlansService {
   async reactivateSubscription(
     tenantId: string,
   ): Promise<PlanUpgradeResponseDto> {
-    // Buscar assinatura atual
-    const subscription = await this.prisma.subscription.findUnique({
-      where: { tenantId },
-      include: { plan: true },
-    });
+    const subscription =
+      await this.planRepository.getCurrentSubscription(tenantId);
 
     if (!subscription) {
       throw new NotFoundException('Assinatura não encontrada');
@@ -278,24 +210,9 @@ export class PlansService {
       );
     }
 
-    // Nota: Para reativar no Stripe, seria necessário criar uma nova assinatura
-    // Por enquanto, apenas reativamos no banco local
-    // Se houver integração com Stripe, isso precisaria ser implementado
-
-    // Reativar no banco de dados
-    const now = new Date();
-    const newExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 dias
-
-    const reactivatedSubscription = await this.prisma.subscription.update({
-      where: { tenantId },
-      data: {
-        status: SubStatus.ACTIVE,
-        canceledAt: null,
-        expiresAt: newExpiresAt,
-        renewedAt: now,
-      },
-      include: { plan: true },
-    });
+    const newExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const reactivatedSubscription =
+      await this.planRepository.reactivateSubscription(tenantId, newExpiresAt);
 
     // Registrar no histórico
     await this.recordSubscriptionHistory(
@@ -321,90 +238,10 @@ export class PlansService {
       nextBillingDate: newExpiresAt.toISOString(),
     };
   }
-  private async recordSubscriptionHistory(
-    tenantId: string,
-    action: SubscriptionAction,
-    previousPlanId?: string,
-    previousPlanName?: string,
-    previousPlanPrice?: number,
-    newPlanId?: string,
-    newPlanName?: string,
-    newPlanPrice?: number,
-    reason?: string,
-    triggeredBy: string = 'system',
-  ): Promise<void> {
-    try {
-      const subscription = await this.prisma.subscription.findUnique({
-        where: { tenantId },
-      });
 
-      if (!subscription) {
-        return;
-      }
-
-      // Buscar datas de expiração se existirem
-      const [prevPlan, newPlan] = await Promise.all([
-        previousPlanId
-          ? this.prisma.plan.findUnique({
-              where: { id: previousPlanId },
-            })
-          : null,
-        newPlanId
-          ? this.prisma.plan.findUnique({
-              where: { id: newPlanId },
-            })
-          : null,
-      ]);
-
-      await this.prisma.subscriptionHistory.create({
-        data: {
-          tenantId,
-          subscriptionId: subscription.id,
-          action,
-          previousPlanId: previousPlanId || null,
-          previousPlanName: previousPlanName || prevPlan?.name || null,
-          previousPlanPrice: previousPlanPrice || prevPlan?.price || null,
-          previousExpiresAt: subscription.expiresAt,
-          newPlanId: newPlanId || null,
-          newPlanName: newPlanName || newPlan?.name || null,
-          newPlanPrice: newPlanPrice || newPlan?.price || null,
-          newExpiresAt: subscription.expiresAt,
-          reason,
-          triggeredBy,
-        },
-      });
-
-      this.logger.log(`[recordSubscriptionHistory] Histórico registrado`, {
-        tenantId,
-        action,
-        reason,
-      });
-    } catch (error) {
-      this.logger.error(
-        `[recordSubscriptionHistory] Erro ao registrar histórico`,
-        {
-          error: error instanceof Error ? error.message : String(error),
-          tenantId,
-          action,
-        },
-      );
-      // Não falha o fluxo se o histórico não for registrado
-    }
-  }
-
-  /**
-   * Retorna o histórico completo de assinatura
-   */
   async getPlanHistory(tenantId: string): Promise<SubscriptionHistoryDto> {
-    const subscription = await this.prisma.subscription.findUnique({
-      where: { tenantId },
-      include: {
-        plan: true,
-        history: {
-          orderBy: { createdAt: 'desc' },
-        },
-      },
-    });
+    const subscription =
+      await this.planRepository.getSubscriptionWithHistory(tenantId);
 
     if (!subscription) {
       throw new NotFoundException('Assinatura não encontrada');
@@ -414,7 +251,6 @@ export class PlansService {
     const expiresAt = subscription.expiresAt || now;
     const isExpired = expiresAt < now;
 
-    // Determinar status
     let currentStatus: 'ACTIVE' | 'CANCELED' | 'EXPIRED';
     if (subscription.status === SubStatus.CANCELED) {
       currentStatus = 'CANCELED';
@@ -424,7 +260,6 @@ export class PlansService {
       currentStatus = 'ACTIVE';
     }
 
-    // Calcular estatísticas
     const upgrades = subscription.history.filter(
       (h) => h.action === 'UPGRADED',
     ).length;
@@ -446,7 +281,6 @@ export class PlansService {
           )
         : undefined;
 
-    // Mapear eventos
     const events: SubscriptionHistoryEventDto[] = subscription.history.map(
       (history) => ({
         id: history.id,
@@ -479,28 +313,17 @@ export class PlansService {
     };
   }
 
-  /**
-   * Retorna histórico em formato detalhado (para timeline visual)
-   */
   async getPlanHistoryDetailed(
     tenantId: string,
   ): Promise<PlanHistoryDetailDto[]> {
-    const subscription = await this.prisma.subscription.findUnique({
-      where: { tenantId },
-      include: {
-        history: {
-          orderBy: { createdAt: 'desc' },
-        },
-      },
-    });
+    const subscription =
+      await this.planRepository.getSubscriptionWithHistory(tenantId);
 
     if (!subscription) {
       throw new NotFoundException('Assinatura não encontrada');
     }
 
-    const details: PlanHistoryDetailDto[] = [];
-
-    for (const history of subscription.history) {
+    return subscription.history.map((history) => {
       const actionDescriptions: Record<string, string> = {
         CREATED: `Assinatura criada no plano ${history.newPlanName}`,
         UPGRADED: `Upgrade de ${history.previousPlanName} para ${history.newPlanName}`,
@@ -511,68 +334,40 @@ export class PlansService {
         EXPIRED: `Plano ${history.previousPlanName} expirou`,
       };
 
-      const description =
-        actionDescriptions[history.action] || 'Ação desconhecida';
-
-      details.push({
+      return {
         id: history.id,
         timestamp: history.createdAt.toISOString(),
         action: history.action,
         previousPlan: history.previousPlanName || null,
         currentPlan: history.newPlanName || null,
-        description,
+        description: actionDescriptions[history.action] || 'Ação desconhecida',
         reason: history.reason || undefined,
         triggeredBy: history.triggeredBy || undefined,
-      });
-    }
-
-    return details;
-  }
-
-  private mapToPlanInfoDto(plan: any, subscription: any): PlanInfoDto {
-    const now = new Date();
-    const expiresAt = subscription.expiresAt || now;
-    const isExpired = expiresAt < now;
-
-    let status: 'ACTIVE' | 'EXPIRED' | 'CANCELLED';
-    if (subscription.status === SubStatus.CANCELED) {
-      status = 'CANCELLED';
-    } else if (isExpired) {
-      status = 'EXPIRED';
-    } else {
-      status = 'ACTIVE';
-    }
-
-    return {
-      id: plan.id,
-      name: plan.name,
-      price: plan.price,
-      currency: plan.currency,
-      maxUsers: plan.maxUsers,
-      maxContacts: plan.maxContacts,
-      hasAPI: plan.hasAPI,
-      description: plan.description,
-      planExpiresAt: expiresAt.toISOString(),
-      createdAt: subscription.startedAt.toISOString(),
-      status,
-    };
-  }
-
-  private getPlanLevel(planName: string): number {
-    const levels: Record<string, number> = {
-      STARTER: 1,
-      PROFESSIONAL: 2,
-      ENTERPRISE: 3,
-    };
-    return levels[planName] || 0;
-  }
-
-  // ===== NOVOS MÉTODOS PARA INTEGRAÇÃO COM STRIPE =====
-
-  async getAllPlans() {
-    return await this.prisma.plan.findMany({
-      orderBy: { price: 'asc' },
+      };
     });
+  }
+
+  async getAllPlans(tenantType?: 'CANDIDATE' | 'COMPANY') {
+    const plans = await this.planRepository.getAllPlans();
+
+    if (!tenantType) {
+      return plans;
+    }
+
+    const candidatePlans = ['FREE', 'PRO', 'PREMIUM'];
+    const companyPlans = ['STARTER', 'PROFESSIONAL', 'ENTERPRISE'];
+
+    const filteredPlans = plans.filter((plan) => {
+      if (tenantType === 'CANDIDATE') {
+        return candidatePlans.includes(plan.name);
+      }
+      return companyPlans.includes(plan.name);
+    });
+
+    return filteredPlans.map((plan) => ({
+      ...plan,
+      features: this.getPlanFeatures(plan.name, tenantType),
+    }));
   }
 
   async createCheckoutSession(
@@ -581,20 +376,14 @@ export class PlansService {
     successUrl: string,
     cancelUrl: string,
   ) {
-    // Buscar o plano pelo priceId
-    const plan = await this.prisma.plan.findFirst({
-      where: { stripePriceId: priceId },
-    });
+    const plan = await this.planRepository.findPlanByStripePriceId(priceId);
 
     if (!plan) {
       throw new NotFoundException('Plano não encontrado');
     }
 
-    // Verificar se já existe uma subscription ativa
-    const existingSubscription = await this.prisma.subscription.findUnique({
-      where: { tenantId },
-      include: { tenant: true },
-    });
+    const existingSubscription =
+      await this.planRepository.getCurrentSubscription(tenantId);
 
     if (existingSubscription?.status === SubStatus.ACTIVE) {
       throw new BadRequestException(
@@ -607,18 +396,13 @@ export class PlansService {
     if (existingSubscription?.stripeCustomerId) {
       customerId = existingSubscription.stripeCustomerId;
     } else {
-      // Buscar dados do tenant para criar o customer
-      const tenant = await this.prisma.tenant.findUnique({
-        where: { id: tenantId },
-      });
+      const tenant = await this.planRepository.getTenantById(tenantId);
 
       if (!tenant) {
         throw new NotFoundException('Tenant não encontrado');
       }
 
-      const adminUser = await this.prisma.user.findFirst({
-        where: { tenantId, isActive: true },
-      });
+      const adminUser = await this.planRepository.getActiveAdminUser(tenantId);
       if (!adminUser) {
         throw new NotFoundException('Usuário administrador não encontrado');
       }
@@ -641,10 +425,8 @@ export class PlansService {
   }
 
   async getSubscriptionLimits(tenantId: string) {
-    const subscription = await this.prisma.subscription.findUnique({
-      where: { tenantId },
-      include: { plan: true },
-    });
+    const subscription =
+      await this.planRepository.getCurrentSubscription(tenantId);
 
     if (!subscription) {
       throw new NotFoundException('Assinatura não encontrada');
@@ -658,24 +440,16 @@ export class PlansService {
   }
 
   async checkUsageLimits(tenantId: string) {
-    const subscription = await this.prisma.subscription.findUnique({
-      where: { tenantId },
-      include: { plan: true },
-    });
+    const subscription =
+      await this.planRepository.getCurrentSubscription(tenantId);
 
     if (!subscription) {
       throw new NotFoundException('Assinatura não encontrada');
     }
 
-    const limits = subscription.plan;
-
     return {
-      contacts: {
-        limit: limits.maxContacts,
-      },
-      api: {
-        enabled: limits.hasAPI,
-      },
+      contacts: { limit: subscription.plan.maxContacts },
+      api: { enabled: subscription.plan.hasAPI },
     };
   }
 
@@ -683,25 +457,20 @@ export class PlansService {
     tenantId: string,
     newPriceId: string,
   ): Promise<PlanUpgradeResponseDto> {
-    const subscription = await this.prisma.subscription.findUnique({
-      where: { tenantId },
-      include: { plan: true },
-    });
+    const subscription =
+      await this.planRepository.getCurrentSubscription(tenantId);
 
     if (!subscription) {
       throw new NotFoundException('Assinatura não encontrada');
     }
 
-    // Buscar o novo plano
-    const newPlan = await this.prisma.plan.findFirst({
-      where: { stripePriceId: newPriceId },
-    });
+    const newPlan =
+      await this.planRepository.findPlanByStripePriceId(newPriceId);
 
     if (!newPlan) {
       throw new NotFoundException('Novo plano não encontrado');
     }
 
-    // Validar se é realmente um upgrade
     const currentPlanLevel = this.getPlanLevel(subscription.plan.name);
     const newPlanLevel = this.getPlanLevel(newPlan.name);
 
@@ -709,7 +478,6 @@ export class PlansService {
       throw new BadRequestException('O novo plano deve ser superior ao atual');
     }
 
-    // Atualizar no Stripe se existir stripeSubscriptionId
     if (subscription.stripeSubscriptionId) {
       try {
         await this.stripeService.updateSubscription(
@@ -718,26 +486,18 @@ export class PlansService {
         );
       } catch (error) {
         throw new BadRequestException(
-          `Erro ao atualizar assinatura no Stripe: ${error.message}`,
+          `Erro ao atualizar assinatura no Stripe: ${(error as Error).message}`,
         );
       }
     }
 
-    // Atualizar no banco de dados
-    const now = new Date();
-    const newExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 dias para novo período
+    const newExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const updatedSubscription = await this.planRepository.upgradePlan(
+      tenantId,
+      newPlan.id,
+      newExpiresAt,
+    );
 
-    const updatedSubscription = await this.prisma.subscription.update({
-      where: { tenantId },
-      data: {
-        planId: newPlan.id,
-        renewedAt: now,
-        expiresAt: newExpiresAt,
-      },
-      include: { plan: true },
-    });
-
-    // Registrar no histórico
     await this.recordSubscriptionHistory(
       tenantId,
       SubscriptionAction.UPGRADED,
@@ -751,60 +511,7 @@ export class PlansService {
       'stripe',
     );
 
-    // Buscar dados para enviar email
-    try {
-      const tenant = await this.prisma.tenant.findUnique({
-        where: { id: tenantId },
-      });
-
-      const adminUser = await this.prisma.user.findFirst({
-        where: { tenantId, isActive: true },
-      });
-
-      if (tenant && adminUser) {
-        this.logger.log(`[upgradeSubscription] Enviando email de upgrade`, {
-          tenantId,
-          oldPlan: subscription.plan.name,
-          newPlan: newPlan.name,
-          email: adminUser.email,
-        });
-
-        // Enviar email de upgrade (não bloqueia se falhar)
-        await this.emailService
-          .sendUpgradeEmail({
-            companyName: tenant.name,
-            contactName: adminUser.name,
-            contactEmail: adminUser.email,
-            oldPlanName: subscription.plan.name,
-            newPlanName: newPlan.name,
-            newPlanPrice: newPlan.price,
-            currency: newPlan.currency,
-            newMaxUsers: newPlan.maxUsers || 0,
-            newMaxContacts: newPlan.maxContacts || 0,
-            hasAPI: newPlan.hasAPI,
-          })
-          .catch((error) => {
-            // Log error but don't fail the upgrade
-            this.logger.error(
-              `[upgradeSubscription] Erro ao enviar email de upgrade`,
-              {
-                error: error.message,
-                tenantId,
-                email: adminUser.email,
-              },
-            );
-          });
-      }
-    } catch (error) {
-      // Log silencioso se falhar na busca de dados
-      this.logger.error(
-        `[upgradeSubscription] Erro ao preparar dados do email`,
-        {
-          error: error.message,
-          tenantId,
-        },
-      );
-    }
+    await this.sendUpgradeEmail(tenantId, subscription.plan, newPlan);
 
     return {
       success: true,
@@ -815,15 +522,13 @@ export class PlansService {
   }
 
   async validateSubscription(tenantId: string): Promise<boolean> {
-    const subscription = await this.prisma.subscription.findUnique({
-      where: { tenantId },
-    });
+    const subscription =
+      await this.planRepository.getCurrentSubscription(tenantId);
 
     if (!subscription) {
       return false;
     }
 
-    // Verificar se está ativa e não expirada
     const now = new Date();
     const isActive = subscription.status === SubStatus.ACTIVE;
     const isNotExpired =
@@ -836,9 +541,8 @@ export class PlansService {
     tenantId: string,
     returnUrl: string,
   ): Promise<string> {
-    const subscription = await this.prisma.subscription.findUnique({
-      where: { tenantId },
-    });
+    const subscription =
+      await this.planRepository.getCurrentSubscription(tenantId);
 
     if (!subscription) {
       throw new NotFoundException('Assinatura não encontrada');
@@ -857,16 +561,7 @@ export class PlansService {
   }
 
   async getCurrentCompany(tenantId: string) {
-    const tenant = await this.prisma.tenant.findUnique({
-      where: { id: tenantId },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
+    const tenant = await this.planRepository.getTenantById(tenantId);
 
     if (!tenant) {
       throw new NotFoundException('Empresa não encontrada');
@@ -883,16 +578,10 @@ export class PlansService {
   }
 
   async getPlanUsage(tenantId: string) {
-    // Buscar estatísticas atuais do tenant
-    const userCount = await this.prisma.user.count({
-      where: { tenantId, deletedAt: null, isActive: true },
-    });
-
-    // Buscar limites do plano atual
-    const subscription = await this.prisma.subscription.findUnique({
-      where: { tenantId },
-      include: { plan: true },
-    });
+    const [userCount, subscription] = await Promise.all([
+      this.planRepository.countActiveUsers(tenantId),
+      this.planRepository.getCurrentSubscription(tenantId),
+    ]);
 
     if (!subscription) {
       throw new NotFoundException('Plano não encontrado');
@@ -902,5 +591,274 @@ export class PlansService {
       currentUsers: userCount,
       maxUsers: subscription.plan.maxUsers || 0,
     };
+  }
+
+  // ===== MÉTODOS PRIVADOS =====
+
+  private async recordSubscriptionHistory(
+    tenantId: string,
+    action: SubscriptionAction,
+    previousPlanId?: string,
+    previousPlanName?: string,
+    previousPlanPrice?: number,
+    newPlanId?: string,
+    newPlanName?: string,
+    newPlanPrice?: number,
+    reason?: string,
+    triggeredBy: string = 'system',
+  ): Promise<void> {
+    try {
+      const subscription =
+        await this.planRepository.getCurrentSubscription(tenantId);
+
+      if (!subscription) {
+        return;
+      }
+
+      await this.planRepository.recordHistory({
+        tenantId,
+        subscriptionId: subscription.id,
+        action,
+        previousPlanId: previousPlanId || null,
+        previousPlanName: previousPlanName || null,
+        previousPlanPrice: previousPlanPrice || null,
+        previousExpiresAt: subscription.expiresAt,
+        newPlanId: newPlanId || null,
+        newPlanName: newPlanName || null,
+        newPlanPrice: newPlanPrice || null,
+        newExpiresAt: subscription.expiresAt,
+        reason,
+        triggeredBy,
+      });
+
+      this.logger.log(`[recordSubscriptionHistory] Histórico registrado`, {
+        tenantId,
+        action,
+        reason,
+      });
+    } catch (error) {
+      this.logger.error(
+        `[recordSubscriptionHistory] Erro ao registrar histórico`,
+        {
+          error: error instanceof Error ? error.message : String(error),
+          tenantId,
+          action,
+        },
+      );
+    }
+  }
+
+  private async sendCancellationEmail(
+    tenantId: string,
+    subscription: SubscriptionWithPlan,
+  ): Promise<void> {
+    try {
+      const [tenant, adminUser] = await Promise.all([
+        this.planRepository.getTenantById(tenantId),
+        this.planRepository.getActiveAdminUser(tenantId),
+      ]);
+
+      if (tenant && adminUser) {
+        this.logger.log(`[cancelPlan] Enviando email de cancelamento`, {
+          tenantId,
+          email: adminUser.email,
+        });
+
+        const expirationDate =
+          subscription.expiresAt?.toISOString() ?? new Date().toISOString();
+
+        await this.emailService
+          .sendCancellationEmail({
+            companyName: tenant.name,
+            contactName: adminUser.name,
+            contactEmail: adminUser.email,
+            planName: subscription.plan.name || 'Plano',
+            expirationDate,
+          })
+          .catch((error) => {
+            this.logger.error(
+              `[cancelPlan] Erro ao enviar email de cancelamento`,
+              {
+                error: (error as Error).message,
+                tenantId,
+                email: adminUser.email,
+              },
+            );
+          });
+      }
+    } catch (error) {
+      this.logger.error(`[cancelPlan] Erro ao preparar dados do email`, {
+        error: error instanceof Error ? error.message : String(error),
+        tenantId,
+      });
+    }
+  }
+
+  private async sendUpgradeEmail(
+    tenantId: string,
+    oldPlan: Plan,
+    newPlan: Plan,
+  ): Promise<void> {
+    try {
+      const [tenant, adminUser] = await Promise.all([
+        this.planRepository.getTenantById(tenantId),
+        this.planRepository.getActiveAdminUser(tenantId),
+      ]);
+
+      if (tenant && adminUser) {
+        this.logger.log(`[upgradeSubscription] Enviando email de upgrade`, {
+          tenantId,
+          oldPlan: oldPlan.name,
+          newPlan: newPlan.name,
+          email: adminUser.email,
+        });
+
+        await this.emailService
+          .sendUpgradeEmail({
+            companyName: tenant.name,
+            contactName: adminUser.name,
+            contactEmail: adminUser.email,
+            oldPlanName: oldPlan.name,
+            newPlanName: newPlan.name,
+            newPlanPrice: newPlan.price,
+            currency: newPlan.currency,
+            newMaxUsers: newPlan.maxUsers || 0,
+            newMaxContacts: newPlan.maxContacts || 0,
+            hasAPI: newPlan.hasAPI,
+          })
+          .catch((error) => {
+            this.logger.error(
+              `[upgradeSubscription] Erro ao enviar email de upgrade`,
+              {
+                error: (error as Error).message,
+                tenantId,
+                email: adminUser.email,
+              },
+            );
+          });
+      }
+    } catch (error) {
+      this.logger.error(
+        `[upgradeSubscription] Erro ao preparar dados do email`,
+        {
+          error: error instanceof Error ? error.message : String(error),
+          tenantId,
+        },
+      );
+    }
+  }
+
+  private mapToPlanInfoDto(
+    plan: Plan,
+    subscription: Subscription,
+  ): PlanInfoDto {
+    const now = new Date();
+    const expiresAt = subscription.expiresAt || now;
+    const isExpired = expiresAt < now;
+
+    let status: 'ACTIVE' | 'EXPIRED' | 'CANCELLED';
+    if (subscription.status === SubStatus.CANCELED) {
+      status = 'CANCELLED';
+    } else if (isExpired) {
+      status = 'EXPIRED';
+    } else {
+      status = 'ACTIVE';
+    }
+
+    return {
+      id: plan.id,
+      name: plan.name,
+      price: plan.price,
+      currency: plan.currency,
+      maxUsers: plan.maxUsers ?? undefined,
+      maxContacts: plan.maxContacts ?? undefined,
+      hasAPI: plan.hasAPI,
+      description: plan.description ?? '',
+      planExpiresAt: expiresAt.toISOString(),
+      createdAt: subscription.startedAt.toISOString(),
+      status,
+    };
+  }
+
+  private getPlanLevel(planName: string): number {
+    const levels: Record<string, number> = {
+      FREE: 0,
+      PRO: 1,
+      PREMIUM: 2,
+      STARTER: 1,
+      PROFESSIONAL: 2,
+      ENTERPRISE: 3,
+    };
+    return levels[planName] || 0;
+  }
+
+  private getPlanFeatures(
+    planName: string,
+    tenantType: 'CANDIDATE' | 'COMPANY',
+  ): string[] {
+    if (tenantType === 'CANDIDATE') {
+      const candidateFeatures: Record<string, string[]> = {
+        FREE: [
+          '100 vagas visíveis por dia',
+          '10 candidaturas manuais por dia',
+          'AI Matching básico',
+          '1 carta de apresentação IA/mês',
+          'Email de vagas diário',
+        ],
+        PRO: [
+          'Vagas ilimitadas',
+          '50 candidaturas por dia',
+          '10 AutoApply por dia',
+          'AI Matching detalhado',
+          '20 cartas de apresentação IA/mês',
+          '5 adaptações de CV por IA/mês',
+          'CRM de Recrutadores (50 contatos)',
+          'Push notifications em tempo real',
+          'Relatórios completos',
+          'Suporte por email',
+        ],
+        PREMIUM: [
+          'Tudo do plano Pro',
+          'Candidaturas ilimitadas',
+          '30 AutoApply por dia',
+          'AI Matching + Sugestões personalizadas',
+          'Cartas de apresentação ilimitadas',
+          'Adaptações de CV ilimitadas',
+          'CRM de Recrutadores ilimitado',
+          'Push + WhatsApp notifications',
+          'Relatórios + Exportação',
+          'Suporte prioritário',
+        ],
+      };
+      return candidateFeatures[planName] || [];
+    }
+
+    const companyFeatures: Record<string, string[]> = {
+      STARTER: [
+        'Até 5 usuários',
+        'Até 10 vagas ativas',
+        'Gestão básica de candidatos',
+        'Relatórios básicos',
+      ],
+      PROFESSIONAL: [
+        'Até 20 usuários',
+        'Vagas ilimitadas',
+        'Pipeline de candidatos avançado',
+        'Relatórios detalhados',
+        'Integrações básicas',
+        'Suporte prioritário',
+      ],
+      ENTERPRISE: [
+        'Usuários ilimitados',
+        'Vagas ilimitadas',
+        'Pipeline avançado com automações',
+        'Relatórios personalizados',
+        'API completa',
+        'Integrações avançadas',
+        'Suporte dedicado',
+        'SLA garantido',
+      ],
+    };
+    return companyFeatures[planName] || [];
   }
 }
