@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useState, useRef } from "react";
+
 import {
   Box,
   Button,
@@ -8,13 +9,14 @@ import {
   CardContent,
   Typography,
   Avatar,
-  IconButton,
   Alert,
+  CircularProgress,
+  IconButton,
 } from "@mui/material";
-import { CloudUpload, Delete } from "@mui/icons-material";
+import { CloudUpload, Delete, PhotoCamera } from "@mui/icons-material";
+
 import { UserProfile } from "@/app/hooks/use-profile";
-import { getCookie } from "cookies-next";
-import { uploadAvatarAction } from "../actions/upload-avatar";
+import { useAvatarUpload } from "../hooks/use-avatar-upload";
 
 interface ProfileAvatarTabProps {
   profile: UserProfile | undefined;
@@ -22,138 +24,100 @@ interface ProfileAvatarTabProps {
 
 export const ProfileAvatarTab = ({ profile }: ProfileAvatarTabProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<boolean>(false);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
-  /**
-   * Handle file selection and preview
-   */
-  const handleFileSelect = useCallback((file: File) => {
-    // Validate file type
-    const acceptedFormats = [
-      "image/png",
-      "image/jpeg",
-      "image/gif",
-      "image/webp",
-    ];
+  const { mutate: uploadAvatar, isPending } = useAvatarUpload({
+    onSuccess: (data) => {
+      if (data.success) {
+        setFeedback({
+          type: "success",
+          message: data.message || "Avatar atualizado com sucesso!",
+        });
+        setSelectedFile(null);
+        setPreviewUrl(null);
+      } else {
+        setFeedback({
+          type: "error",
+          message: data.message || "Erro ao enviar avatar",
+        });
+      }
+    },
+    onError: (error) => {
+      setFeedback({
+        type: "error",
+        message: error.message || "Erro inesperado ao enviar avatar",
+      });
+    },
+  });
 
-    if (!acceptedFormats.includes(file.type)) {
-      setError("Formato deve ser PNG, JPG, GIF ou WebP");
-      return;
-    }
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    setFeedback(null);
 
-    // Validate file size (5MB)
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      setError("Arquivo deve ser menor que 5MB");
-      return;
-    }
-
-    // Clear previous errors and success
-    setError(null);
-    setSuccess(false);
-
-    // Set selected file
-    setSelectedFile(file);
-
-    // Create preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setPreview(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-  }, []);
-
-  /**
-   * Handle file input change
-   */
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.currentTarget.files;
-    if (files && files.length > 0) {
-      handleFileSelect(files[0]);
-    }
-  };
-
-  /**
-   * Handle upload button click
-   */
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  /**
-   * Handle avatar save
-   */
-  const handleSaveAvatar = async () => {
-    if (!selectedFile) {
-      setError("Selecione uma imagem primeiro");
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-    setSuccess(false);
-
-    try {
-      // Get token from cookie
-      const token = getCookie("access_token");
-      if (!token) {
-        setError("Token de autenticação não encontrado. Faça login novamente.");
-        setIsLoading(false);
+    if (file) {
+      // Validate file size (1MB max)
+      if (file.size > 1 * 1024 * 1024) {
+        setFeedback({
+          type: "error",
+          message: "Arquivo deve ser menor que 1MB",
+        });
         return;
       }
 
-      const result = await uploadAvatarAction(selectedFile, token as string);
-
-      if (result.success) {
-        setSuccess(true);
-        setSelectedFile(null);
-        setPreview(null);
-
-        // Call refetch callback to update profile data
-        if (onUploadSuccess) {
-          await onUploadSuccess();
-        }
-
-        // Reset after 2 seconds
-        setTimeout(() => {
-          setSuccess(false);
-        }, 2000);
-      } else {
-        setError(result.message || "Erro ao enviar avatar");
+      // Validate file type
+      const validTypes = ["image/png", "image/jpeg", "image/gif", "image/webp"];
+      if (!validTypes.includes(file.type)) {
+        setFeedback({
+          type: "error",
+          message: "Formato deve ser PNG, JPG, GIF ou WebP",
+        });
+        return;
       }
-    } catch (err) {
-      console.error("Upload error:", err);
-      setError("Erro ao enviar avatar. Tente novamente.");
-    } finally {
-      setIsLoading(false);
+
+      setSelectedFile(file);
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
-  /**
-   * Handle cancel
-   */
   const handleRemovePreview = () => {
     setSelectedFile(null);
-    setPreview(null);
-    setError(null);
-    setSuccess(false);
+    setPreviewUrl(null);
+    setFeedback(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
 
-  const currentAvatar = previewUrl || profile?.avatar;
+  const handleUpload = () => {
+    if (selectedFile) {
+      uploadAvatar(selectedFile);
+    }
+  };
+
+  const handleSelectClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  // Current avatar to display (preview takes priority)
+  const displayAvatar = previewUrl || profile?.avatar || undefined;
 
   return (
     <Box className="space-y-6">
       <Card variant="outlined">
         <CardContent>
           <Typography variant="h6" className="mb-4 flex items-center gap-2">
+            <PhotoCamera color="primary" />
             Foto de Perfil
           </Typography>
 
@@ -161,8 +125,15 @@ export const ProfileAvatarTab = ({ profile }: ProfileAvatarTabProps) => {
             {/* Avatar Preview */}
             <Box className="relative">
               <Avatar
-                src={currentAvatar || undefined}
-                sx={{ width: 150, height: 150, fontSize: 48 }}
+                alt={profile?.name || "Avatar"}
+                src={displayAvatar}
+                sx={{
+                  width: 150,
+                  height: 150,
+                  fontSize: 48,
+                  border: previewUrl ? "3px solid" : "none",
+                  borderColor: "primary.main",
+                }}
               >
                 {profile?.name?.charAt(0).toUpperCase()}
               </Avatar>
@@ -171,10 +142,11 @@ export const ProfileAvatarTab = ({ profile }: ProfileAvatarTabProps) => {
                 <IconButton
                   size="small"
                   onClick={handleRemovePreview}
+                  disabled={isPending}
                   sx={{
                     position: "absolute",
-                    top: 0,
-                    right: 0,
+                    top: -8,
+                    right: -8,
                     bgcolor: "error.main",
                     color: "white",
                     "&:hover": { bgcolor: "error.dark" },
@@ -190,32 +162,36 @@ export const ProfileAvatarTab = ({ profile }: ProfileAvatarTabProps) => {
               <Typography
                 variant="body2"
                 color="text.secondary"
-                className="mb-2"
+                className="mb-1"
               >
-                Formatos aceitos: JPG, PNG, GIF
+                Formatos aceitos: JPG, PNG, GIF, WebP
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Tamanho máximo: 5MB
+                Tamanho máximo: 1MB
               </Typography>
             </Box>
 
-            {/* Upload Button */}
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              onChange={handleFileSelect}
+              style={{ display: "none" }}
+            />
+
+            {/* Action Buttons */}
             <Box className="flex gap-2">
               <Button
-                component="label"
                 variant="outlined"
                 startIcon={<CloudUpload />}
+                onClick={handleSelectClick}
+                disabled={isPending}
               >
                 Selecionar Imagem
-                <input
-                  type="file"
-                  hidden
-                  accept="image/jpeg,image/png,image/gif"
-                  onChange={handleFileSelect}
-                />
               </Button>
 
-              {currentAvatar && !previewUrl && (
+              {profile?.avatar && !previewUrl && (
                 <Button
                   variant="outlined"
                   color="error"
@@ -227,9 +203,22 @@ export const ProfileAvatarTab = ({ profile }: ProfileAvatarTabProps) => {
               )}
             </Box>
 
+            {/* Selected file info */}
             {selectedFile && (
               <Alert severity="info" className="w-full max-w-md">
-                Arquivo selecionado: {selectedFile.name}
+                <Typography variant="body2">
+                  <strong>Arquivo selecionado:</strong> {selectedFile.name}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Tamanho: {(selectedFile.size / 1024).toFixed(1)} KB
+                </Typography>
+              </Alert>
+            )}
+
+            {/* Feedback messages */}
+            {feedback && (
+              <Alert severity={feedback.type} className="w-full max-w-md">
+                {feedback.message}
               </Alert>
             )}
           </Box>
@@ -239,10 +228,17 @@ export const ProfileAvatarTab = ({ profile }: ProfileAvatarTabProps) => {
       <Box className="flex justify-end">
         <Button
           variant="contained"
-          disabled={!selectedFile}
-          startIcon={<CloudUpload />}
+          disabled={!selectedFile || isPending}
+          startIcon={
+            isPending ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              <CloudUpload />
+            )
+          }
+          onClick={handleUpload}
         >
-          Salvar Avatar
+          {isPending ? "Enviando..." : "Salvar Avatar"}
         </Button>
       </Box>
     </Box>
