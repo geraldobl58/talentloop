@@ -28,7 +28,7 @@ import {
   DEFAULT_COMPANY_PLAN,
 } from "@/app/libs/plans-data";
 import { Heading } from "@/app/components/hading";
-import { PlanCard } from "@/app/features/plans/components/plan-card";
+import { PlanCard } from "@/app/components/plan-card";
 import { UserType } from "@/app/shared/types/user-type";
 
 // =============================================
