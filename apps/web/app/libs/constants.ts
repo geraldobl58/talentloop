@@ -35,3 +35,38 @@ export const APP_CONSTANTS = {
     RESET_PASSWORD: "/auth/reset-password",
   },
 } as const;
+
+export const PAGE_TITLES: Record<
+  string,
+  { title: string; description: string }
+> = {
+  "/dashboard": { title: "Dashboard", description: "Visão geral" },
+  "/profile": {
+    title: "Meu Perfil",
+    description: "Gerencie suas informações pessoais",
+  },
+  "/jobs": { title: "Vagas", description: "Gerencie as vagas da empresa" },
+  "/candidates": { title: "Candidatos", description: "Gerencie os candidatos" },
+  "/processes": {
+    title: "Processos",
+    description: "Gerencie os processos seletivos",
+  },
+  "/reports": {
+    title: "Relatórios",
+    description: "Visualize relatórios e métricas",
+  },
+  "/company": { title: "Empresa", description: "Informações da empresa" },
+  "/users": {
+    title: "Usuários",
+    description: "Gerencie os usuários da empresa",
+  },
+  "/applications": { title: "Candidaturas", description: "Suas candidaturas" },
+  "/saved-jobs": {
+    title: "Vagas Salvas",
+    description: "Vagas que você salvou",
+  },
+  "/interviews": {
+    title: "Entrevistas",
+    description: "Suas entrevistas agendadas",
+  },
+};
