@@ -224,6 +224,11 @@ export const formatPrice = (
   });
 };
 
+export const formatDate = (dateString: string | null) => {
+  if (!dateString) return "Sem data";
+  return new Date(dateString).toLocaleDateString("pt-BR");
+};
+
 export const isFreePlan = (plan: PlanOption): boolean => plan.price === 0;
 
 // =============================================
