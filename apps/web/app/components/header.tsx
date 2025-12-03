@@ -1,13 +1,18 @@
-"use client";
-
 import Link from "next/link";
+import { cookies } from "next/headers";
 
-import { Box, Button, Container } from "@mui/material";
+import { Box, Container } from "@mui/material";
 
 import { Logo } from "./logo";
 import { NavLinks } from "./nav-links";
+import { HeaderAuthButtons } from "./header-auth-buttons";
+import { APP_CONSTANTS } from "../libs/constants";
 
-export const Header = () => {
+export const Header = async () => {
+  const cookieStore = await cookies();
+  const isLoggedIn = !!cookieStore.get(APP_CONSTANTS.COOKIES.ACCESS_TOKEN)
+    ?.value;
+
   return (
     <Box
       component="header"
@@ -24,9 +29,7 @@ export const Header = () => {
             <Logo />
           </Link>
           <NavLinks />
-          <Button variant="outlined" href="/auth/sign-in" component={Link}>
-            Já tenho conta
-          </Button>
+          <HeaderAuthButtons isLoggedIn={isLoggedIn} />
         </Box>
       </Container>
     </Box>
