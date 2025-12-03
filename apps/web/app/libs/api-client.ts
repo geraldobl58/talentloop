@@ -1,8 +1,7 @@
 import ky from "ky";
 import { getCookie } from "cookies-next";
 import { env } from "./env";
-
-const TOKEN_COOKIE_NAME = "access_token";
+import { APP_CONSTANTS } from "./constants";
 
 export const api = ky.create({
   prefixUrl: env.NEXT_PUBLIC_API_URL,
@@ -17,7 +16,9 @@ export const api = ky.create({
             try {
               const { cookies: serverCookies } = await import("next/headers");
               const cookieStore = await serverCookies();
-              token = cookieStore.get(TOKEN_COOKIE_NAME)?.value;
+              token = cookieStore.get(
+                APP_CONSTANTS.COOKIES.ACCESS_TOKEN
+              )?.value;
             } catch {
               // Silently fail on server - token might not be available
               token = undefined;
@@ -26,7 +27,9 @@ export const api = ky.create({
 
           // Client-side: get token from cookies
           if (!token && typeof window !== "undefined") {
-            token = getCookie(TOKEN_COOKIE_NAME) as string | undefined;
+            token = getCookie(APP_CONSTANTS.COOKIES.ACCESS_TOKEN) as
+              | string
+              | undefined;
           }
 
           if (token) {

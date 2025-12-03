@@ -3,6 +3,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { getCookie } from "cookies-next";
 
+import { APP_CONSTANTS } from "@/app/libs/constants";
 import {
   changePasswordAction,
   ChangePasswordActionState,
@@ -21,7 +22,7 @@ interface UseChangePasswordOptions {
 export function useChangePassword(options?: UseChangePasswordOptions) {
   return useMutation({
     mutationFn: async (data: ChangePasswordInput) => {
-      const token = getCookie("access_token");
+      const token = getCookie(APP_CONSTANTS.COOKIES.ACCESS_TOKEN);
 
       if (!token) {
         throw new Error("Token de autenticação não encontrado");

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { getCookie } from "cookies-next";
 import { Box, CircularProgress } from "@mui/material";
 
+import { APP_CONSTANTS } from "@/app/libs/constants";
 import { CandidateCard } from "@/app/features/dashboard/candidate/components/candidate-card";
 import { CompanyCard } from "@/app/features/dashboard/company/components/company-card";
 
@@ -17,7 +18,9 @@ const DashboardPage = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const tenantType = getCookie("tenant_type") as TenantType | undefined;
+    const tenantType = getCookie(APP_CONSTANTS.COOKIES.TENANT_TYPE) as
+      | TenantType
+      | undefined;
     const mappedUserType = mapTenantTypeToUserType(tenantType);
 
     queueMicrotask(() => {

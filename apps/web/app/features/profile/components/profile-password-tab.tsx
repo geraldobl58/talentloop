@@ -21,6 +21,7 @@ import {
 } from "@mui/material";
 import { Visibility, VisibilityOff, Lock, Info } from "@mui/icons-material";
 
+import { APP_CONSTANTS } from "@/app/libs/constants";
 import {
   changePasswordSchema,
   ChangePasswordInput,
@@ -97,8 +98,8 @@ export const ProfilePasswordTab = () => {
     }, 1000);
 
     const logoutTimeout = setTimeout(() => {
-      deleteCookie("access_token");
-      deleteCookie("tenant_type");
+      deleteCookie(APP_CONSTANTS.COOKIES.ACCESS_TOKEN);
+      deleteCookie(APP_CONSTANTS.COOKIES.TENANT_TYPE);
       router.push("/auth/sign-in");
     }, LOGOUT_DELAY_SECONDS * 1000);
 

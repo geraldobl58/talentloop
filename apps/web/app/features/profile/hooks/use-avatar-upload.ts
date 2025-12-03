@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCookie } from "cookies-next";
 
+import { APP_CONSTANTS } from "@/app/libs/constants";
 import {
   uploadAvatarAction,
   UploadAvatarActionState,
@@ -22,7 +23,7 @@ export function useAvatarUpload(options?: UseAvatarUploadOptions) {
 
   return useMutation({
     mutationFn: async (file: File) => {
-      const token = getCookie("access_token");
+      const token = getCookie(APP_CONSTANTS.COOKIES.ACCESS_TOKEN);
 
       if (!token) {
         throw new Error("Token de autenticação não encontrado");

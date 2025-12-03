@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getCookie } from "cookies-next";
 
+import { APP_CONSTANTS } from "@/app/libs/constants";
 import {
   check2FAStatusAction,
   Check2FAStatusActionState,
@@ -52,7 +53,7 @@ export function useCheck2FAStatus(options?: UseCheck2FAStatusOptions) {
   return useQuery({
     queryKey: twoFactorQueryKeys.status,
     queryFn: async (): Promise<Check2FAStatusActionState> => {
-      const token = getCookie("access_token");
+      const token = getCookie(APP_CONSTANTS.COOKIES.ACCESS_TOKEN);
 
       if (!token) {
         throw new Error("Token de autenticação não encontrado");
@@ -71,7 +72,7 @@ export function useCheck2FAStatus(options?: UseCheck2FAStatusOptions) {
 export function useGenerate2FA(options?: UseGenerate2FAOptions) {
   return useMutation({
     mutationFn: async (): Promise<Generate2FAActionState> => {
-      const token = getCookie("access_token");
+      const token = getCookie(APP_CONSTANTS.COOKIES.ACCESS_TOKEN);
 
       if (!token) {
         throw new Error("Token de autenticação não encontrado");
@@ -96,7 +97,7 @@ export function useEnable2FA(options?: UseEnable2FAOptions) {
 
   return useMutation({
     mutationFn: async (totpToken: string): Promise<Enable2FAActionState> => {
-      const token = getCookie("access_token");
+      const token = getCookie(APP_CONSTANTS.COOKIES.ACCESS_TOKEN);
 
       if (!token) {
         throw new Error("Token de autenticação não encontrado");
@@ -125,7 +126,7 @@ export function useDisable2FA(options?: UseDisable2FAOptions) {
 
   return useMutation({
     mutationFn: async (totpToken: string): Promise<Disable2FAActionState> => {
-      const token = getCookie("access_token");
+      const token = getCookie(APP_CONSTANTS.COOKIES.ACCESS_TOKEN);
 
       if (!token) {
         throw new Error("Token de autenticação não encontrado");
@@ -156,7 +157,7 @@ export function useRegenerateBackupCodes(
     mutationFn: async (
       totpToken: string
     ): Promise<RegenerateBackupCodesActionState> => {
-      const token = getCookie("access_token");
+      const token = getCookie(APP_CONSTANTS.COOKIES.ACCESS_TOKEN);
 
       if (!token) {
         throw new Error("Token de autenticação não encontrado");

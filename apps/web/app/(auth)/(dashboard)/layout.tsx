@@ -8,6 +8,7 @@ import { Box, CircularProgress, CssBaseline, Toolbar } from "@mui/material";
 
 import { filterMenuByRole, RoleType } from "@talentloop/roles";
 
+import { APP_CONSTANTS } from "@/app/libs/constants";
 import { HeaderAppBar } from "@/app/components/header-app-bar";
 import { SidebarDrawer } from "@/app/components/sidebar-drawer";
 
@@ -68,8 +69,10 @@ export default function DashboardLayout({
 
   useEffect(() => {
     // Check for auth and tenant type (from API)
-    const token = getCookie("access_token");
-    const tenantType = getCookie("tenant_type") as TenantType | undefined;
+    const token = getCookie(APP_CONSTANTS.COOKIES.ACCESS_TOKEN);
+    const tenantType = getCookie(APP_CONSTANTS.COOKIES.TENANT_TYPE) as
+      | TenantType
+      | undefined;
 
     if (!token) {
       router.push("/auth/sign-in");
@@ -86,8 +89,8 @@ export default function DashboardLayout({
   }, [router]);
 
   const handleLogout = () => {
-    deleteCookie("access_token");
-    deleteCookie("tenant_type");
+    deleteCookie(APP_CONSTANTS.COOKIES.ACCESS_TOKEN);
+    deleteCookie(APP_CONSTANTS.COOKIES.TENANT_TYPE);
     router.push("/auth/sign-in");
   };
 
