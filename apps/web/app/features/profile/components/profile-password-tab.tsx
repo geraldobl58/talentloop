@@ -1,6 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { deleteCookie } from "cookies-next";
+
 import {
   Box,
   Button,
@@ -11,172 +16,280 @@ import {
   Alert,
   InputAdornment,
   IconButton,
+  CircularProgress,
+  LinearProgress,
 } from "@mui/material";
+import { Visibility, VisibilityOff, Lock, Info } from "@mui/icons-material";
+
 import {
-  Lock,
-  Visibility,
-  VisibilityOff,
-  Key,
-} from "@mui/icons-material";
+  changePasswordSchema,
+  ChangePasswordInput,
+} from "../schemas/change-password";
+import { useChangePassword } from "../hooks/use-change-password";
+
+const LOGOUT_DELAY_SECONDS = 5;
 
 export const ProfilePasswordTab = () => {
+  const router = useRouter();
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [feedback, setFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutProgress, setLogoutProgress] = useState(0);
+  const [logoutCountdown, setLogoutCountdown] = useState(LOGOUT_DELAY_SECONDS);
 
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isValid },
+  } = useForm<ChangePasswordInput>({
+    resolver: zodResolver(changePasswordSchema),
+    mode: "onChange",
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
 
-  const [error, setError] = useState<string | null>(null);
+  const { mutate: changePassword, isPending } = useChangePassword({
+    onSuccess: (data) => {
+      if (data.success) {
+        setFeedback({
+          type: "success",
+          message: data.message || "Senha alterada com sucesso!",
+        });
+        reset();
+        setIsLoggingOut(true);
+      } else {
+        setFeedback({
+          type: "error",
+          message: data.message || "Erro ao alterar senha",
+        });
+      }
+    },
+    onError: (error) => {
+      setFeedback({
+        type: "error",
+        message: error.message || "Erro inesperado ao alterar senha",
+      });
+    },
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
+  // Handle logout countdown and progress
+  useEffect(() => {
+    if (!isLoggingOut) return;
 
-    if (newPassword !== confirmPassword) {
-      setError("As senhas não coincidem");
-      return;
-    }
+    const progressInterval = setInterval(() => {
+      setLogoutProgress((prev) => {
+        const newProgress = prev + 100 / (LOGOUT_DELAY_SECONDS * 10);
+        return newProgress >= 100 ? 100 : newProgress;
+      });
+    }, 100);
 
-    if (newPassword.length < 8) {
-      setError("A senha deve ter no mínimo 8 caracteres");
-      return;
-    }
+    const countdownInterval = setInterval(() => {
+      setLogoutCountdown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
 
-    // TODO: Implementar chamada à API
-    console.log("Alterar senha");
+    const logoutTimeout = setTimeout(() => {
+      deleteCookie("access_token");
+      deleteCookie("tenant_type");
+      router.push("/auth/sign-in");
+    }, LOGOUT_DELAY_SECONDS * 1000);
+
+    return () => {
+      clearInterval(progressInterval);
+      clearInterval(countdownInterval);
+      clearTimeout(logoutTimeout);
+    };
+  }, [isLoggingOut, router]);
+
+  const onSubmit = (data: ChangePasswordInput) => {
+    setFeedback(null);
+    changePassword(data);
   };
-
-  const isFormValid =
-    currentPassword.length > 0 &&
-    newPassword.length >= 8 &&
-    confirmPassword.length > 0 &&
-    newPassword === confirmPassword;
 
   return (
     <Box className="space-y-6">
       <Card variant="outlined">
         <CardContent>
           <Typography variant="h6" className="mb-4 flex items-center gap-2">
-            <Key color="primary" />
             Alterar Senha
           </Typography>
 
-          <Alert severity="info" className="mb-4">
+          <Alert severity="info" className="mb-4" icon={<Info />}>
             <Typography variant="body2">
-              Sua senha deve ter pelo menos 8 caracteres e incluir letras maiúsculas,
-              minúsculas, números e caracteres especiais para maior segurança.
+              Sua senha deve ter pelo menos 8 caracteres e incluir letras
+              maiúsculas, minúsculas, números e caracteres especiais para maior
+              segurança.
             </Typography>
           </Alert>
 
-          <form onSubmit={handleSubmit}>
-            <Box className="space-y-4 max-w-md">
-              <TextField
-                fullWidth
-                label="Senha Atual"
-                type={showCurrentPassword ? "text" : "password"}
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Lock className="text-gray-400" />
-                      </InputAdornment>
-                    ),
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                          edge="end"
-                        >
-                          {showCurrentPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  },
-                }}
-              />
+          <Alert severity="warning" className="mb-4" icon={<Info />}>
+            <Typography variant="body2" className="mt-2 font-medium">
+              Após salvar, você será desconectado automaticamente por questões
+              de segurança.
+            </Typography>
+          </Alert>
 
-              <TextField
-                fullWidth
-                label="Nova Senha"
-                type={showNewPassword ? "text" : "password"}
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                helperText="Mínimo de 8 caracteres"
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Lock className="text-gray-400" />
-                      </InputAdornment>
-                    ),
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          onClick={() => setShowNewPassword(!showNewPassword)}
-                          edge="end"
-                        >
-                          {showNewPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  },
-                }}
-              />
-
-              <TextField
-                fullWidth
-                label="Confirmar Nova Senha"
-                type={showConfirmPassword ? "text" : "password"}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                error={confirmPassword.length > 0 && newPassword !== confirmPassword}
-                helperText={
-                  confirmPassword.length > 0 && newPassword !== confirmPassword
-                    ? "As senhas não coincidem"
-                    : ""
-                }
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Lock className="text-gray-400" />
-                      </InputAdornment>
-                    ),
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          edge="end"
-                        >
-                          {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  },
-                }}
-              />
-
-              {error && (
-                <Alert severity="error">{error}</Alert>
-              )}
+          {isLoggingOut ? (
+            <Box className="text-center py-8">
+              <Lock color="primary" sx={{ fontSize: 48, mb: 2 }} />
+              <Typography variant="h6" className="mb-2">
+                Senha alterada com sucesso!
+              </Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                className="mb-4"
+              >
+                Você será desconectado em {logoutCountdown} segundos...
+              </Typography>
+              <Box className="max-w-md mx-auto">
+                <LinearProgress
+                  variant="determinate"
+                  value={logoutProgress}
+                  sx={{ height: 8, borderRadius: 4 }}
+                />
+              </Box>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                className="mt-2 block"
+              >
+                Por favor, faça login novamente com sua nova senha.
+              </Typography>
             </Box>
-          </form>
+          ) : (
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <Box className="space-y-4 max-w-md mx-auto mb-6">
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Senha Atual"
+                    type={showCurrentPassword ? "text" : "password"}
+                    {...register("currentPassword")}
+                    error={!!errors.currentPassword}
+                    helperText={errors.currentPassword?.message}
+                    disabled={isPending}
+                    slotProps={{
+                      input: {
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={() =>
+                                setShowCurrentPassword(!showCurrentPassword)
+                              }
+                              edge="end"
+                              disabled={isPending}
+                            >
+                              {showCurrentPassword ? (
+                                <VisibilityOff />
+                              ) : (
+                                <Visibility />
+                              )}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      },
+                    }}
+                  />
+                </Box>
+
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Nova Senha"
+                    type={showNewPassword ? "text" : "password"}
+                    {...register("newPassword")}
+                    error={!!errors.newPassword}
+                    helperText={errors.newPassword?.message}
+                    disabled={isPending}
+                    slotProps={{
+                      input: {
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={() =>
+                                setShowNewPassword(!showNewPassword)
+                              }
+                              edge="end"
+                              disabled={isPending}
+                            >
+                              {showNewPassword ? (
+                                <VisibilityOff />
+                              ) : (
+                                <Visibility />
+                              )}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      },
+                    }}
+                  />
+                </Box>
+
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Confirmar Nova Senha"
+                    type={showConfirmPassword ? "text" : "password"}
+                    {...register("confirmPassword")}
+                    error={!!errors.confirmPassword}
+                    helperText={errors.confirmPassword?.message}
+                    disabled={isPending}
+                    slotProps={{
+                      input: {
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={() =>
+                                setShowConfirmPassword(!showConfirmPassword)
+                              }
+                              edge="end"
+                              disabled={isPending}
+                            >
+                              {showConfirmPassword ? (
+                                <VisibilityOff />
+                              ) : (
+                                <Visibility />
+                              )}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      },
+                    }}
+                  />
+                </Box>
+
+                {feedback && (
+                  <Alert severity={feedback.type}>{feedback.message}</Alert>
+                )}
+              </Box>
+
+              <Box className="flex justify-end">
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={!isValid || isPending}
+                  startIcon={
+                    isPending ? (
+                      <CircularProgress size={20} color="inherit" />
+                    ) : null
+                  }
+                >
+                  {isPending ? "Alterando..." : "Alterar Senha"}
+                </Button>
+              </Box>
+            </form>
+          )}
         </CardContent>
       </Card>
-
-      <Box className="flex justify-end">
-        <Button
-          variant="contained"
-          disabled={!isFormValid}
-          onClick={handleSubmit}
-        >
-          Alterar Senha
-        </Button>
-      </Box>
     </Box>
   );
 };
