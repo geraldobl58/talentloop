@@ -1,6 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/libs/prisma/prisma.service';
-import { Subscription, Plan } from '@prisma/client';
+import {
+  Subscription,
+  Plan,
+  SubscriptionAction,
+  SubStatus,
+} from '@prisma/client';
 
 /**
  * Plan Repository
@@ -107,5 +112,121 @@ export class PlanRepository {
       maxUsers: plan.maxUsers,
       maxContacts: plan.maxContacts,
     };
+  }
+
+  /**
+   * Encontrar plano por stripePriceId
+   */
+  async findPlanByStripePriceId(stripePriceId: string): Promise<Plan | null> {
+    return this.prisma.plan.findFirst({
+      where: { stripePriceId },
+    });
+  }
+
+  /**
+   * Obter assinatura com histórico
+   */
+  async getSubscriptionWithHistory(tenantId: string) {
+    return this.prisma.subscription.findUnique({
+      where: { tenantId },
+      include: {
+        plan: true,
+        history: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+  }
+
+  /**
+   * Obter tenant por ID
+   */
+  async getTenantById(tenantId: string) {
+    return this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+    });
+  }
+
+  /**
+   * Obter usuário admin ativo do tenant
+   */
+  async getActiveAdminUser(tenantId: string) {
+    return this.prisma.user.findFirst({
+      where: { tenantId, isActive: true },
+    });
+  }
+
+  /**
+   * Contar usuários ativos do tenant
+   */
+  async countActiveUsers(tenantId: string): Promise<number> {
+    return this.prisma.user.count({
+      where: { tenantId, deletedAt: null, isActive: true },
+    });
+  }
+
+  /**
+   * Cancelar assinatura (atualizar status)
+   */
+  async cancelSubscription(tenantId: string) {
+    return this.prisma.subscription.update({
+      where: { tenantId },
+      data: {
+        status: SubStatus.CANCELED,
+        canceledAt: new Date(),
+      },
+    });
+  }
+
+  /**
+   * Reativar assinatura
+   */
+  async reactivateSubscription(tenantId: string, expiresAt: Date) {
+    return this.prisma.subscription.update({
+      where: { tenantId },
+      data: {
+        status: SubStatus.ACTIVE,
+        canceledAt: null,
+        expiresAt,
+        renewedAt: new Date(),
+      },
+      include: { plan: true },
+    });
+  }
+
+  /**
+   * Atualizar plano da assinatura
+   */
+  async upgradePlan(tenantId: string, newPlanId: string, expiresAt: Date) {
+    return this.prisma.subscription.update({
+      where: { tenantId },
+      data: {
+        planId: newPlanId,
+        expiresAt,
+        renewedAt: new Date(),
+      },
+      include: { plan: true },
+    });
+  }
+
+  /**
+   * Registrar histórico de assinatura
+   */
+  async recordHistory(data: {
+    tenantId: string;
+    subscriptionId: string;
+    action: SubscriptionAction;
+    previousPlanId?: string | null;
+    previousPlanName?: string | null;
+    previousPlanPrice?: number | null;
+    previousExpiresAt?: Date | null;
+    newPlanId?: string | null;
+    newPlanName?: string | null;
+    newPlanPrice?: number | null;
+    newExpiresAt?: Date | null;
+    reason?: string;
+    triggeredBy?: string;
+  }) {
+    return this.prisma.subscriptionHistory.create({ data });
   }
 }
