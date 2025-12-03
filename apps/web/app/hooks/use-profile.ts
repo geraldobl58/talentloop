@@ -1,6 +1,5 @@
-"use client";
-
 import { useQuery } from "@tanstack/react-query";
+
 import { api } from "@/app/libs/api-client";
 
 export interface UserProfile {
