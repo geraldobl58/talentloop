@@ -16,11 +16,21 @@ import {
   Profile2FATab,
 } from "@/app/features/profile/components";
 
+enum ProfileTab {
+  DATA = "data",
+  AVATAR = "avatar",
+  PASSWORD = "password",
+  TWO_FA = "2fa",
+}
+
 const ProfilePage = () => {
-  const [activeTab, setActiveTab] = useState("data");
+  const [activeTab, setActiveTab] = useState(ProfileTab.DATA);
   const { data: profile, isLoading } = useProfile();
 
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: string) => {
+  const handleTabChange = (
+    _event: React.SyntheticEvent,
+    newValue: ProfileTab
+  ) => {
     setActiveTab(newValue);
   };
 
@@ -44,44 +54,44 @@ const ProfilePage = () => {
           >
             <Tab
               label="Meus Dados"
-              value="data"
+              value={ProfileTab.DATA}
               icon={<Person />}
               iconPosition="start"
             />
             <Tab
               label="Meu Avatar"
-              value="avatar"
+              value={ProfileTab.AVATAR}
               icon={<PhotoCamera />}
               iconPosition="start"
             />
             <Tab
               label="Alterar Senha"
-              value="password"
+              value={ProfileTab.PASSWORD}
               icon={<Lock />}
               iconPosition="start"
             />
             <Tab
               label="Autenticação 2FA"
-              value="2fa"
+              value={ProfileTab.TWO_FA}
               icon={<Security />}
               iconPosition="start"
             />
           </TabList>
         </Box>
 
-        <TabPanel value="data">
+        <TabPanel value={ProfileTab.DATA}>
           <ProfileDataTab profile={profile} />
         </TabPanel>
 
-        <TabPanel value="avatar">
+        <TabPanel value={ProfileTab.AVATAR}>
           <ProfileAvatarTab profile={profile} />
         </TabPanel>
 
-        <TabPanel value="password">
+        <TabPanel value={ProfileTab.PASSWORD}>
           <ProfilePasswordTab />
         </TabPanel>
 
-        <TabPanel value="2fa">
+        <TabPanel value={ProfileTab.TWO_FA}>
           <Profile2FATab />
         </TabPanel>
       </TabContext>
