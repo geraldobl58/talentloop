@@ -78,6 +78,11 @@ const themeOptions: ThemeOptions = {
           "&:hover": {
             boxShadow: "0 4px 12px rgba(124, 58, 237, 0.3)",
           },
+          "&:disabled": {
+            color: "#FFF",
+            cursor: "not-allowed",
+            backgroundColor: "gray",
+          },
         },
         contained: {
           background: "linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)",
