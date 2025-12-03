@@ -1,0 +1,76 @@
+"use client";
+
+import { useState } from "react";
+import TabContext from "@mui/lab/TabContext";
+import TabList from "@mui/lab/TabList";
+import TabPanel from "@mui/lab/TabPanel";
+import { Box, Tab, Paper } from "@mui/material";
+import { CreditCard, TrendingUp, History } from "@mui/icons-material";
+
+import {
+  CurrentPlanTab,
+  UpgradePlanTab,
+  PlanHistoryTab,
+} from "@/app/features/plans/candidate/components";
+
+enum PlanTab {
+  CURRENT = "current",
+  UPGRADE = "upgrade",
+  HISTORY = "history",
+}
+
+const MyPlansPage = () => {
+  const [activeTab, setActiveTab] = useState(PlanTab.CURRENT);
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: PlanTab) => {
+    setActiveTab(newValue);
+  };
+
+  return (
+    <Paper elevation={0}>
+      <TabContext value={activeTab}>
+        <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+          <TabList
+            onChange={handleTabChange}
+            aria-label="Configurações do plano"
+            variant="scrollable"
+            scrollButtons="auto"
+          >
+            <Tab
+              label="Plano Atual"
+              value={PlanTab.CURRENT}
+              icon={<CreditCard />}
+              iconPosition="start"
+            />
+            <Tab
+              label="Fazer Upgrade"
+              value={PlanTab.UPGRADE}
+              icon={<TrendingUp />}
+              iconPosition="start"
+            />
+            <Tab
+              label="Histórico"
+              value={PlanTab.HISTORY}
+              icon={<History />}
+              iconPosition="start"
+            />
+          </TabList>
+        </Box>
+
+        <TabPanel value={PlanTab.CURRENT}>
+          <CurrentPlanTab />
+        </TabPanel>
+
+        <TabPanel value={PlanTab.UPGRADE}>
+          <UpgradePlanTab />
+        </TabPanel>
+
+        <TabPanel value={PlanTab.HISTORY}>
+          <PlanHistoryTab />
+        </TabPanel>
+      </TabContext>
+    </Paper>
+  );
+};
+
+export default MyPlansPage;
