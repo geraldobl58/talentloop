@@ -1,13 +1,19 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useRef, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
-const SuccessPage = () => {
+// Inner component that uses useSearchParams
+function SuccessContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [countdown, setCountdown] = useState(4);
   const [progress, setProgress] = useState(100);
   const hasRedirected = useRef(false);
+
+  // Check if this is a candidate or company signup
+  // Candidates with FREE plan don't go through Stripe
+  const isCompanySignup = searchParams.get("type") === "company";
 
   useEffect(() => {
     if (hasRedirected.current) return;
@@ -67,23 +73,33 @@ const SuccessPage = () => {
         {/* Text Content */}
         <div className="space-y-4">
           <h1 className="text-4xl font-bold bg-linear-to-r from-white to-slate-400 bg-clip-text text-transparent">
-            Pagamento Confirmado!
+            {isCompanySignup ? "Pagamento Confirmado!" : "Cadastro Confirmado!"}
           </h1>
 
           <p className="text-slate-300 text-lg leading-relaxed">
-            Sua empresa está sendo criada e configurada. Você receberá um email
-            com as informações de acesso em instantes.
+            {isCompanySignup
+              ? "Sua empresa está sendo criada e configurada. Você receberá um email com as informações de acesso em instantes."
+              : "Sua conta foi criada com sucesso! Você receberá um email com as informações de acesso em instantes."}
           </p>
 
           <div className="pt-4 space-y-3 text-sm text-slate-400">
-            <div className="flex items-center justify-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10">
-              <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-              <span>Processando dados de pagamento</span>
-            </div>
-            <div className="flex items-center justify-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10">
-              <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse animation-delay-1000" />
-              <span>Criando sua empresa</span>
-            </div>
+            {isCompanySignup ? (
+              <>
+                <div className="flex items-center justify-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10">
+                  <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+                  <span>Processando dados de pagamento</span>
+                </div>
+                <div className="flex items-center justify-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10">
+                  <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse animation-delay-1000" />
+                  <span>Criando sua empresa</span>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center justify-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10">
+                <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+                <span>Configurando sua conta</span>
+              </div>
+            )}
             <div className="flex items-center justify-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10">
               <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse animation-delay-2000" />
               <span>Enviando email com acesso</span>
@@ -161,6 +177,36 @@ const SuccessPage = () => {
         }
       `}</style>
     </div>
+  );
+}
+
+// Loading fallback
+function SuccessLoading() {
+  return (
+    <div className="min-h-screen w-full flex items-center justify-center p-4 bg-linear-to-br from-slate-900 via-slate-800 to-slate-900">
+      <div className="flex justify-center gap-2">
+        <div
+          className="w-2 h-2 rounded-full bg-blue-400 animate-bounce"
+          style={{ animationDelay: "0ms" }}
+        />
+        <div
+          className="w-2 h-2 rounded-full bg-purple-400 animate-bounce"
+          style={{ animationDelay: "150ms" }}
+        />
+        <div
+          className="w-2 h-2 rounded-full bg-cyan-400 animate-bounce"
+          style={{ animationDelay: "300ms" }}
+        />
+      </div>
+    </div>
+  );
+}
+
+const SuccessPage = () => {
+  return (
+    <Suspense fallback={<SuccessLoading />}>
+      <SuccessContent />
+    </Suspense>
   );
 };
 
