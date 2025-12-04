@@ -112,8 +112,8 @@ export function formatPlanPrice(price: number, currency: string): string {
 }
 
 /**
- * Get plans URL path based on tenant type
+ * Get plans URL path - unified for all tenant types
  */
-export function getPlansPath(tenantType: TenantType): string {
-  return tenantType === "CANDIDATE" ? "/my-plans" : "/company-plans";
+export function getPlansPath(_tenantType: TenantType): string {
+  return "/my-plans";
 }
