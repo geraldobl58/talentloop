@@ -165,12 +165,11 @@ html(lang="pt-BR")
     .container
       .header
         h1 ❌ Assinatura Cancelada
-        p #{companyName}
 
       .content
         p
           | Olá 
-          strong #{contactName}
+          strong #{userName}
           |,
 
         p
@@ -182,7 +181,7 @@ html(lang="pt-BR")
           h3 📋 Informações Importantes
           .info-row
             span.info-label Seu acesso continua até:
-            span.info-value #{expirationDate}
+            span.info-value #{cancellationDate}
           p.info-text Você terá acesso completo a todos os recursos do plano #{planName} até a data acima.
 
         .info-box
@@ -209,7 +208,7 @@ html(lang="pt-BR")
               |  Ao reativar, seus dados estarão disponíveis
 
         .cta-button
-          a(href="https://talentloop.com/dashboard/plans") 🔄 Reativar Assinatura
+          a(href=dataExportUrl) 📥 Exportar Meus Dados
 
       .footer
         p Equipe TalentLoop

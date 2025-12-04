@@ -3,7 +3,7 @@ html(lang="pt-BR")
   head
     meta(charset="UTF-8")
     meta(name="viewport" content="width=device-width, initial-scale=1.0")
-    title Alerta de Limite - TalentLoop
+    title 2FA Ativado - TalentLoop
     style.
       * {
         margin: 0;
@@ -47,69 +47,65 @@ html(lang="pt-BR")
         line-height: 1.6;
         margin-bottom: 16px;
       }
-      .usage-box {
-        background: #f8f9ff;
-        border: 2px solid #667eea;
+      .success-box {
+        background: #d1fae5;
+        border: 2px solid #10b981;
         border-radius: 12px;
         padding: 25px;
         margin: 25px 0;
         text-align: center;
       }
-      .usage-box h3 {
-        color: #1a1a2e;
+      .success-box h3 {
+        color: #065f46;
         font-size: 18px;
-        margin-bottom: 20px;
-      }
-      .usage-stat {
         margin-bottom: 15px;
       }
-      .stat-label {
-        color: #666;
+      .success-box p {
+        color: #047857;
         font-size: 14px;
-        margin-bottom: 5px;
+        line-height: 1.5;
       }
-      .stat-value {
-        color: #667eea;
-        font-size: 28px;
-        font-weight: 700;
-      }
-      .progress-bar {
-        background: #e0e0e0;
-        border-radius: 10px;
-        height: 12px;
-        overflow: hidden;
-        margin: 15px 0;
-      }
-      .progress-fill {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        height: 100%;
-        border-radius: 10px;
-        transition: width 0.3s ease;
-      }
-      .usage-percentage {
-        color: #667eea;
-        font-weight: 600;
-        font-size: 16px;
-      }
-      .benefits-box {
+      .info-box {
         background: #f8f9ff;
+        border: 2px solid #667eea;
         border-radius: 12px;
-        padding: 20px;
+        padding: 25px;
         margin: 25px 0;
       }
-      .benefits-box h4 {
+      .info-box h3 {
         color: #1a1a2e;
-        font-size: 16px;
+        font-size: 18px;
         margin-bottom: 15px;
       }
-      .benefits-list {
+      .info-list {
         list-style: none;
         padding: 0;
         margin: 0;
       }
-      .benefits-list li {
-        padding: 8px 0;
+      .info-list li {
+        padding: 10px 0;
         color: #333;
+        font-size: 14px;
+        line-height: 1.5;
+        border-bottom: 1px solid #f0f0f0;
+      }
+      .info-list li:last-child {
+        border-bottom: none;
+      }
+      .warning-box {
+        background: #fff7ed;
+        border: 1px solid #fdba74;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 25px 0;
+      }
+      .warning-box h4 {
+        color: #9a3412;
+        font-size: 16px;
+        margin-bottom: 10px;
+      }
+      .warning-box p {
+        color: #9a3412;
         font-size: 14px;
         line-height: 1.5;
       }
@@ -151,7 +147,8 @@ html(lang="pt-BR")
   body
     .container
       .header
-        h1 ⚠️ Alerta de Limite
+        h1 🔐 2FA Ativado com Sucesso!
+        p Sua conta está mais segura agora
 
       .content
         p
@@ -159,30 +156,31 @@ html(lang="pt-BR")
           strong #{userName}
           |,
 
-        p
-          | Você está próximo do limite do seu plano.
+        p A autenticação de dois fatores (2FA) foi ativada com sucesso na sua conta TalentLoop. Sua conta agora está protegida com uma camada extra de segurança.
 
-        .usage-box
-          h3 📊 Uso Atual
-          .usage-stat
-            .stat-label Utilização
-            .stat-value #{currentUsage} / #{limit}
-          .progress-bar
-            .progress-fill(style=`width: ${usagePercentage}%`)
-          .usage-percentage #{Math.round(usagePercentage)}% utilizado
+        .success-box
+          h3 ✅ 2FA Ativado
+          p Sua conta agora requer um código adicional para login, além da sua senha.
 
-        p Para continuar aproveitando todos os recursos sem interrupções, considere fazer upgrade do seu plano.
+        .info-box
+          h3 📋 Informações Importantes
+          ul.info-list
+            li
+              strong 🔑 Códigos de Backup:
+              |  Você recebeu #{backupCodesCount} códigos de backup. Guarde-os em local seguro!
+            li
+              strong 📱 App Autenticador:
+              |  Use Google Authenticator, Authy ou similar para gerar códigos
+            li
+              strong ⏱️ Códigos Temporários:
+              |  Os códigos são válidos por 30 segundos
+
+        .warning-box
+          h4 ⚠️ Importante
+          p Se você perder acesso ao seu dispositivo e aos códigos de backup, pode perder o acesso à sua conta. Guarde seus códigos de backup em local seguro!
 
         .cta-button
-          a(href=upgradeUrl) 🚀 Fazer Upgrade
-
-        .benefits-box
-          h4 ✨ Benefícios do Upgrade
-          ul.benefits-list
-            li ✅ Mais recursos para gerenciar
-            li ✅ Recursos avançados
-            li ✅ Suporte prioritário
-            li ✅ Acesso completo à API
+          a(href=supportUrl) 📞 Precisa de Ajuda?
 
       .footer
         p Equipe TalentLoop

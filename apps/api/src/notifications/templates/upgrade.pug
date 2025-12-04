@@ -169,37 +169,32 @@ html(lang="pt-BR")
     .container
       .header
         h1 🚀 Plano Atualizado!
-        p #{companyName}
 
       .content
         p
           | Olá 
-          strong #{contactName}
+          strong #{userName}
           |,
 
         p
           | Que alegria! Sua assinatura foi atualizada com sucesso. Agora você tem acesso a todos os recursos premium do plano 
-          strong #{newPlanName}
+          strong #{newPlan}
           |.
 
         .plan-box
           h3 📊 Seu Novo Plano
           .plan-row
             span.plan-label Plano anterior:
-            span.plan-value.old #{oldPlanName}
+            span.plan-value.old #{oldPlan}
           .plan-row
             span.plan-label Novo plano:
-            span.plan-value.new #{newPlanName}
+            span.plan-value.new #{newPlan}
           .plan-row
             span.plan-label Valor:
-            span.plan-value.price #{currency} #{newPlanPrice}/mês
+            span.plan-value.price #{newPrice}/mês
           .plan-row
-            span.plan-label Novos recursos:
-          ul.features-list
-            li ✅ #{newMaxUsers} usuários
-            li ✅ #{newMaxContacts} contatos
-            if hasAPI
-              li ✅ Acesso completo à API
+            span.plan-label Próxima cobrança:
+            span.plan-value #{billingDate}
 
         .next-steps-box
           h4 ✨ Próximos Passos
@@ -208,6 +203,9 @@ html(lang="pt-BR")
             li 👥 Convide mais usuários para sua equipe
             li 🔗 Integre com suas ferramentas favoritas
             li 💬 Aproveite o suporte prioritário
+
+        .cta-button
+          a(href=dashboardUrl) 🚀 Acessar Dashboard
 
         .support-box
           p Dúvidas sobre suas novas funcionalidades?
