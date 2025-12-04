@@ -558,14 +558,28 @@ export class PlansService {
 
     if (!subscription.stripeCustomerId) {
       throw new BadRequestException(
-        'Customer Stripe não encontrado para este tenant',
+        'Portal de pagamento não disponível. Entre em contato com o suporte.',
       );
     }
 
-    return await this.stripeService.createBillingPortalSession(
-      subscription.stripeCustomerId,
-      returnUrl,
-    );
+    try {
+      return await this.stripeService.createBillingPortalSession(
+        subscription.stripeCustomerId,
+        returnUrl,
+      );
+    } catch (error) {
+      // Handle Stripe customer not found error
+      if (
+        error?.type === 'StripeInvalidRequestError' ||
+        error?.code === 'resource_missing' ||
+        error?.message?.includes('No such customer')
+      ) {
+        throw new BadRequestException(
+          'Portal de pagamento não disponível. O cadastro de pagamento não foi encontrado.',
+        );
+      }
+      throw error;
+    }
   }
 
   async getCurrentCompany(tenantId: string) {
