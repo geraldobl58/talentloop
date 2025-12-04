@@ -13,7 +13,7 @@ import {
   CircularProgress,
   IconButton,
 } from "@mui/material";
-import { CloudUpload, Delete, PhotoCamera } from "@mui/icons-material";
+import { CloudUpload, Delete } from "@mui/icons-material";
 
 import { UserProfile } from "@/app/hooks/use-profile";
 import { useAvatarUpload } from "../hooks/use-avatar-upload";

@@ -62,7 +62,7 @@ export async function changePasswordAction(
 
     // Handle validation errors
     if (error instanceof Error && "errors" in error) {
-      const validationError = error as any;
+      const validationError = error as { errors?: { message?: string }[] };
       return {
         success: false,
         message:

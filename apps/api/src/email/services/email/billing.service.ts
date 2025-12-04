@@ -141,15 +141,12 @@ export class BillingEmailService {
     refundDate: Date;
   }): Promise<void> {
     try {
-      const html = this.templateRenderService.render(
-        'refund-confirmation',
-        {
-          userName: options.userName,
-          amount: options.amount.toFixed(2),
-          reason: options.reason,
-          refundDate: options.refundDate.toLocaleDateString('pt-BR'),
-        },
-      );
+      const html = this.templateRenderService.render('refund-confirmation', {
+        userName: options.userName,
+        amount: options.amount.toFixed(2),
+        reason: options.reason,
+        refundDate: options.refundDate.toLocaleDateString('pt-BR'),
+      });
 
       await this.emailRepository.send({
         to: options.to,

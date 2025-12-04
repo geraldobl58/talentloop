@@ -91,7 +91,7 @@ export class AutoUpgradeService {
     });
 
     // Registrar log de upgrade
-    await this.logUpgrade(tenantId, oldPlanName, newPlanName, subscription.id);
+    this.logUpgrade(tenantId, oldPlanName, newPlanName, subscription.id);
 
     this.logger.log(`✅ Auto-upgrade completed for tenant: ${tenantId}`, {
       oldPlan: oldPlanName,
@@ -105,7 +105,6 @@ export class AutoUpgradeService {
         tenantId,
         oldPlanName,
         newPlanName,
-        expiresAt,
       );
     }
 
@@ -198,7 +197,6 @@ export class AutoUpgradeService {
     tenantId: string,
     oldPlanName: string,
     newPlanName: string,
-    _expiresAt: Date,
   ): Promise<void> {
     try {
       // Buscar informações do tenant e admin

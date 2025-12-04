@@ -4,7 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { CandidateSignUpForm, CompanySignUpForm } from "./sign-up-form";
+import { SignUpCandidateForm } from "./sign-up-candidate-form";
+import { SignUpCompanyForm } from "./sign-up-company-form";
 import {
   formSignUpCandidateSchema,
   formSignUpCompanySchema,
@@ -34,7 +35,7 @@ const CandidateFormWrapper = ({
   });
 
   return (
-    <CandidateSignUpForm
+    <SignUpCandidateForm
       form={form}
       onSubmit={onSubmit}
       userType={UserType.CANDIDATE}
@@ -68,7 +69,7 @@ const CompanyFormWrapper = ({
   });
 
   return (
-    <CompanySignUpForm
+    <SignUpCompanyForm
       form={form}
       onSubmit={onSubmit}
       userType={UserType.COMPANY}
@@ -80,7 +81,7 @@ const CompanyFormWrapper = ({
 };
 
 describe("Sign Up Form Components", () => {
-  describe("CandidateSignUpForm", () => {
+  describe("SignUpCandidateForm", () => {
     it("should render candidate form fields", () => {
       render(<CandidateFormWrapper />);
 
@@ -134,7 +135,7 @@ describe("Sign Up Form Components", () => {
     });
   });
 
-  describe("CompanySignUpForm", () => {
+  describe("SignUpCompanyForm", () => {
     it("should render company form fields", () => {
       render(<CompanyFormWrapper />);
 

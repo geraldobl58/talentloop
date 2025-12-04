@@ -10,7 +10,7 @@ import { NotFoundException, BadRequestException } from '@nestjs/common';
 vi.mock('@prisma/client', async (importOriginal) => {
   const actual = await importOriginal();
   return {
-    ...actual,
+    ...(actual as Record<string, unknown>),
     SubStatus: {
       ACTIVE: 'ACTIVE',
       CANCELED: 'CANCELED',

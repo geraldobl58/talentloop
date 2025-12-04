@@ -3,8 +3,9 @@
  * Supports both CANDIDATE and COMPANY tenant types
  */
 
-// Tenant types
-export type TenantType = "CANDIDATE" | "COMPANY";
+// Re-export TenantType from shared types
+export type { TenantType } from "@/app/shared/types/tenant-type";
+import type { TenantType } from "@/app/shared/types/tenant-type";
 
 // Plan status enum
 export type PlanStatus = "ACTIVE" | "EXPIRED" | "CANCELLED";

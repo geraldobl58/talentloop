@@ -9,7 +9,7 @@ import { Box, Tab, Paper } from "@mui/material";
 import { CreditCard, TrendingUp, History } from "@mui/icons-material";
 
 import { APP_CONSTANTS } from "@/app/libs/constants";
-import { TenantType } from "@/app/features/plans/types";
+import { TenantType } from "@/app/shared/types/tenant-type";
 
 import {
   CurrentPlanTab,
