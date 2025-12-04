@@ -80,7 +80,34 @@ export class StripeRepository {
   }
 
   /**
+   * Recuperar sessão de checkout
+   */
+  async getCheckoutSession(
+    sessionId: string,
+  ): Promise<Stripe.Checkout.Session> {
+    const session = await this.stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ['subscription', 'customer'],
+    });
+    return session;
+  }
+
+  /**
+   * Recuperar line items da sessão de checkout
+   */
+  async getCheckoutSessionLineItems(
+    sessionId: string,
+  ): Promise<Stripe.ApiList<Stripe.LineItem>> {
+    const lineItems = await this.stripe.checkout.sessions.listLineItems(
+      sessionId,
+      { expand: ['data.price'] },
+    );
+    return lineItems;
+  }
+
+  /**
    * Atualizar assinatura
+   * - proration_behavior: 'always_invoice' garante cobrança imediata da diferença
+   * - payment_behavior: 'error_if_incomplete' falha se não conseguir cobrar
    */
   async updateSubscription(
     subscriptionId: string,
@@ -99,6 +126,8 @@ export class StripeRepository {
           price: priceId,
         },
       ],
+      proration_behavior: 'always_invoice', // Gera invoice imediatamente
+      payment_behavior: 'error_if_incomplete', // Falha se pagamento não completar
     });
     return updated;
   }
