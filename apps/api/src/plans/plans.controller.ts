@@ -275,13 +275,14 @@ export class PlansController {
     @Body() dto: { priceId: string; successUrl: string; cancelUrl: string },
     @GetCurrentUser() user: CurrentUser,
   ) {
-    const sessionUrl = await this.plansService.createCheckoutSession(
+    const session = await this.plansService.createCheckoutSession(
       user.tenantId,
       dto.priceId,
       dto.successUrl,
       dto.cancelUrl,
     );
-    return { url: sessionUrl };
+    // Return both url and sessionId for post-checkout verification
+    return { url: session.url, sessionId: session.id };
   }
 
   @Post('billing-portal')
@@ -316,6 +317,39 @@ export class PlansController {
       dto.returnUrl,
     );
     return { url: portalUrl };
+  }
+
+  @Post('verify-checkout')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Verify checkout session',
+    description:
+      'Verifies a Stripe checkout session and updates subscription if payment was successful. Use this after returning from Stripe checkout.',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        sessionId: {
+          type: 'string',
+          description: 'Stripe checkout session ID',
+        },
+      },
+      required: ['sessionId'],
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Checkout verification result',
+  })
+  async verifyCheckout(
+    @Body() dto: { sessionId: string },
+    @GetCurrentUser() user: CurrentUser,
+  ) {
+    return this.plansService.verifyAndSyncCheckout(
+      user.tenantId,
+      dto.sessionId,
+    );
   }
 
   @Get('subscription/validate')
