@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState, useCallback, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -24,7 +24,7 @@ import {
 // User-initiated states that override the query-derived state
 type UserAction = "setup" | "success" | "regenerate-success" | null;
 
-export const Profile2FATab = () => {
+export const Profile2FATab = memo(() => {
   // User action state - overrides query-derived state when set
   const [userAction, setUserAction] = useState<UserAction>(null);
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
@@ -73,19 +73,17 @@ export const Profile2FATab = () => {
   });
 
   // Derive view state: user action takes precedence, then query state
-  const getViewState = () => {
+  const viewState = useMemo(() => {
     if (userAction) return userAction;
     if (isLoadingStatus) return "loading";
     if (isEnabled) return "enabled";
     return "disabled";
-  };
-
-  const viewState = getViewState();
+  }, [userAction, isLoadingStatus, isEnabled]);
 
   /**
    * Handle start 2FA setup
    */
-  const handleStartSetup = async () => {
+  const handleStartSetup = useCallback(async () => {
     setFeedback(null);
 
     try {
@@ -108,132 +106,148 @@ export const Profile2FATab = () => {
         message: "Erro inesperado ao gerar código 2FA",
       });
     }
-  };
+  }, [generate]);
 
   /**
    * Handle copy secret to clipboard
    */
-  const handleCopySecret = async () => {
+  const handleCopySecret = useCallback(async () => {
     if (secret) {
       await navigator.clipboard.writeText(secret);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
-  };
+  }, [secret]);
 
   /**
    * Handle enable 2FA
    */
-  const handleEnable2FA = async (data: Enable2FAInput) => {
-    setFeedback(null);
+  const handleEnable2FA = useCallback(
+    async (data: Enable2FAInput) => {
+      setFeedback(null);
 
-    try {
-      const result = await enable(data.token);
+      try {
+        const result = await enable(data.token);
 
-      if (result.success && result.data) {
-        setBackupCodes(result.data.backupCodes);
-        setUserAction("success");
-        enableForm.reset();
-      } else {
+        if (result.success && result.data) {
+          setBackupCodes(result.data.backupCodes);
+          setUserAction("success");
+          enableForm.reset();
+        } else {
+          setFeedback({
+            type: "error",
+            message: result.message || "Código inválido",
+          });
+        }
+      } catch {
         setFeedback({
           type: "error",
-          message: result.message || "Código inválido",
+          message: "Erro inesperado ao ativar 2FA",
         });
       }
-    } catch {
-      setFeedback({
-        type: "error",
-        message: "Erro inesperado ao ativar 2FA",
-      });
-    }
-  };
+    },
+    [enable, enableForm]
+  );
 
   /**
    * Handle disable 2FA
    */
-  const handleDisable2FA = async (data: Disable2FAInput) => {
-    setFeedback(null);
+  const handleDisable2FA = useCallback(
+    async (data: Disable2FAInput) => {
+      setFeedback(null);
 
-    try {
-      const result = await disable(data.token);
+      try {
+        const result = await disable(data.token);
 
-      if (result.success) {
-        setFeedback({
-          type: "success",
-          message: "2FA desativado com sucesso",
-        });
-        setUserAction(null);
-        disableForm.reset();
-      } else {
+        if (result.success) {
+          setFeedback({
+            type: "success",
+            message: "2FA desativado com sucesso",
+          });
+          setUserAction(null);
+          disableForm.reset();
+        } else {
+          setFeedback({
+            type: "error",
+            message: result.message || "Código inválido",
+          });
+        }
+      } catch {
         setFeedback({
           type: "error",
-          message: result.message || "Código inválido",
+          message: "Erro inesperado ao desativar 2FA",
         });
       }
-    } catch {
-      setFeedback({
-        type: "error",
-        message: "Erro inesperado ao desativar 2FA",
-      });
-    }
-  };
+    },
+    [disable, disableForm]
+  );
 
   /**
    * Handle regenerate backup codes
    */
-  const handleRegenerateBackupCodes = async (data: Disable2FAInput) => {
-    setFeedback(null);
+  const handleRegenerateBackupCodes = useCallback(
+    async (data: Disable2FAInput) => {
+      setFeedback(null);
 
-    try {
-      const result = await regenerate(data.token);
+      try {
+        const result = await regenerate(data.token);
 
-      if (result.success && result.data) {
-        setBackupCodes(result.data.backupCodes);
-        setShowRegenerateDialog(false);
-        setUserAction("regenerate-success");
-        regenerateForm.reset();
-      } else {
+        if (result.success && result.data) {
+          setBackupCodes(result.data.backupCodes);
+          setShowRegenerateDialog(false);
+          setUserAction("regenerate-success");
+          regenerateForm.reset();
+        } else {
+          setFeedback({
+            type: "error",
+            message: result.message || "Erro ao regenerar códigos de backup",
+          });
+        }
+      } catch {
         setFeedback({
           type: "error",
-          message: result.message || "Erro ao regenerar códigos de backup",
+          message: "Erro inesperado ao regenerar códigos de backup",
         });
       }
-    } catch {
-      setFeedback({
-        type: "error",
-        message: "Erro inesperado ao regenerar códigos de backup",
-      });
-    }
-  };
+    },
+    [regenerate, regenerateForm]
+  );
 
   /**
    * Handle cancel setup
    */
-  const handleCancelSetup = () => {
+  const handleCancelSetup = useCallback(() => {
     setUserAction(null);
     setActiveStep(0);
     setQrCode("");
     setSecret("");
     enableForm.reset();
     setFeedback(null);
-  };
+  }, [enableForm]);
 
   /**
    * Handle finish success
    */
-  const handleFinishSuccess = () => {
+  const handleFinishSuccess = useCallback(() => {
     setUserAction(null);
     setBackupCodes([]);
     setFeedback(null);
-  };
+  }, []);
 
   /**
    * Handle close regenerate dialog
    */
-  const handleCloseRegenerateDialog = () => {
+  const handleCloseRegenerateDialog = useCallback(() => {
     setShowRegenerateDialog(false);
     setFeedback(null);
-  };
+  }, []);
+
+  /**
+   * Handle open regenerate dialog
+   */
+  const handleOpenRegenerateDialog = useCallback(() => {
+    setShowRegenerateDialog(true);
+  }, []);
 
   // Loading state
   if (viewState === "loading" || isLoadingStatus) {
@@ -260,7 +274,7 @@ export const Profile2FATab = () => {
           disableForm={disableForm}
           isDisabling={isDisabling}
           onDisable={handleDisable2FA}
-          onOpenRegenerateDialog={() => setShowRegenerateDialog(true)}
+          onOpenRegenerateDialog={handleOpenRegenerateDialog}
         />
         <RegenerateBackupDialog
           open={showRegenerateDialog}
@@ -301,4 +315,6 @@ export const Profile2FATab = () => {
       onStartSetup={handleStartSetup}
     />
   );
-};
+});
+
+Profile2FATab.displayName = "Profile2FATab";
