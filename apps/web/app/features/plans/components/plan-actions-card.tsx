@@ -90,10 +90,23 @@ export const PlanActionsCard = ({
         }
       },
       onError: (error) => {
-        onFeedback({
-          type: "error",
-          message: error.message || "Erro inesperado ao abrir portal",
-        });
+        // Trata erro de customer não encontrado no Stripe
+        const errorMessage = error.message || "";
+        if (
+          errorMessage.includes("No such customer") ||
+          errorMessage.includes("Customer Stripe não encontrado")
+        ) {
+          onFeedback({
+            type: "error",
+            message:
+              "Portal de pagamento não disponível. Por favor, entre em contato com o suporte.",
+          });
+        } else {
+          onFeedback({
+            type: "error",
+            message: errorMessage || "Erro inesperado ao abrir portal",
+          });
+        }
       },
     });
 
@@ -180,8 +193,11 @@ export const PlanActionsCard = ({
           <Typography variant="body2" color="text.secondary" className="mt-2">
             Você ainda terá acesso aos recursos até{" "}
             {formatDate(plan.planExpiresAt)}.
-            {tenantType === "CANDIDATE" &&
-              " Após essa data, seu plano será revertido para FREE."}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" className="mt-1">
+            {tenantType === "CANDIDATE"
+              ? "Após essa data, seu plano será revertido para FREE."
+              : "Após essa data, será necessário contratar um novo plano para continuar usando os recursos."}
           </Typography>
         </DialogContent>
         <DialogActions>
