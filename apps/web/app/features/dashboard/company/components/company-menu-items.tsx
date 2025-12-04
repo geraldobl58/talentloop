@@ -26,6 +26,12 @@ export const companyMenuItems: MenuItem[] = [
   { label: "Relatórios", icon: <TrendingUpIcon />, href: "/reports" },
   { label: "Empresa", icon: <BusinessIcon />, href: "/company" },
   {
+    label: "Meu Plano",
+    icon: <BusinessIcon />,
+    href: "/my-plans",
+    roles: [RoleType.OWNER, RoleType.ADMIN], // Apenas OWNER e ADMIN podem ver
+  },
+  {
     label: "Usuários",
     icon: <PeopleIcon />,
     href: "/users",
