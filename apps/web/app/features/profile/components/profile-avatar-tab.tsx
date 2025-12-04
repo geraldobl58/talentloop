@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { memo, useState, useRef, useCallback, useMemo } from "react";
 
 import {
   Box,
@@ -22,7 +22,15 @@ interface ProfileAvatarTabProps {
   profile: UserProfile | undefined;
 }
 
-export const ProfileAvatarTab = ({ profile }: ProfileAvatarTabProps) => {
+const VALID_IMAGE_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/gif",
+  "image/webp",
+];
+const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
+
+export const ProfileAvatarTab = memo(({ profile }: ProfileAvatarTabProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -55,62 +63,77 @@ export const ProfileAvatarTab = ({ profile }: ProfileAvatarTabProps) => {
     },
   });
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    setFeedback(null);
+  const handleFileSelect = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      setFeedback(null);
 
-    if (file) {
-      // Validate file size (1MB max)
-      if (file.size > 1 * 1024 * 1024) {
-        setFeedback({
-          type: "error",
-          message: "Arquivo deve ser menor que 1MB",
-        });
-        return;
+      if (file) {
+        // Validate file size (1MB max)
+        if (file.size > MAX_FILE_SIZE) {
+          setFeedback({
+            type: "error",
+            message: "Arquivo deve ser menor que 1MB",
+          });
+          return;
+        }
+
+        // Validate file type
+        if (!VALID_IMAGE_TYPES.includes(file.type)) {
+          setFeedback({
+            type: "error",
+            message: "Formato deve ser PNG, JPG, GIF ou WebP",
+          });
+          return;
+        }
+
+        setSelectedFile(file);
+
+        // Create preview
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPreviewUrl(reader.result as string);
+        };
+        reader.readAsDataURL(file);
       }
+    },
+    []
+  );
 
-      // Validate file type
-      const validTypes = ["image/png", "image/jpeg", "image/gif", "image/webp"];
-      if (!validTypes.includes(file.type)) {
-        setFeedback({
-          type: "error",
-          message: "Formato deve ser PNG, JPG, GIF ou WebP",
-        });
-        return;
-      }
-
-      setSelectedFile(file);
-
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleRemovePreview = () => {
+  const handleRemovePreview = useCallback(() => {
     setSelectedFile(null);
     setPreviewUrl(null);
     setFeedback(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
-  };
+  }, []);
 
-  const handleUpload = () => {
+  const handleUpload = useCallback(() => {
     if (selectedFile) {
       uploadAvatar(selectedFile);
     }
-  };
+  }, [selectedFile, uploadAvatar]);
 
-  const handleSelectClick = () => {
+  const handleSelectClick = useCallback(() => {
     fileInputRef.current?.click();
-  };
+  }, []);
 
-  // Current avatar to display (preview takes priority)
-  const displayAvatar = previewUrl || profile?.avatar || undefined;
+  // Memoize computed values
+  const displayAvatar = useMemo(
+    () => previewUrl || profile?.avatar || undefined,
+    [previewUrl, profile?.avatar]
+  );
+
+  const avatarInitial = useMemo(
+    () => profile?.name?.charAt(0).toUpperCase(),
+    [profile?.name]
+  );
+
+  const fileSizeDisplay = useMemo(
+    () => (selectedFile ? `${(selectedFile.size / 1024).toFixed(1)} KB` : null),
+    [selectedFile]
+  );
 
   return (
     <Box className="space-y-6">
@@ -134,7 +157,7 @@ export const ProfileAvatarTab = ({ profile }: ProfileAvatarTabProps) => {
                   borderColor: "primary.main",
                 }}
               >
-                {profile?.name?.charAt(0).toUpperCase()}
+                {avatarInitial}
               </Avatar>
 
               {previewUrl && (
@@ -209,7 +232,7 @@ export const ProfileAvatarTab = ({ profile }: ProfileAvatarTabProps) => {
                   <strong>Arquivo selecionado:</strong> {selectedFile.name}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Tamanho: {(selectedFile.size / 1024).toFixed(1)} KB
+                  Tamanho: {fileSizeDisplay}
                 </Typography>
               </Alert>
             )}
@@ -242,4 +265,6 @@ export const ProfileAvatarTab = ({ profile }: ProfileAvatarTabProps) => {
       </Box>
     </Box>
   );
-};
+});
+
+ProfileAvatarTab.displayName = "ProfileAvatarTab";
