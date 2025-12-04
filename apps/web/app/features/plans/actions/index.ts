@@ -13,11 +13,13 @@ import {
   reactivatePlan,
   createCheckoutSession,
   createBillingPortalSession,
+  verifyCheckout,
 } from "../http";
 import {
   PlanActionState,
   UpgradeActionState,
   CheckoutActionState,
+  VerifyCheckoutResponse,
 } from "../types";
 
 /**
@@ -190,6 +192,7 @@ export async function createCheckoutSessionAction(
     return {
       success: true,
       url: response.url,
+      sessionId: response.sessionId,
     };
   } catch (error) {
     console.error("[CreateCheckoutSession Action Error]", error);
@@ -256,6 +259,40 @@ export async function createBillingPortalAction(
     return {
       success: false,
       message: "Erro inesperado ao criar portal de cobrança",
+    };
+  }
+}
+
+/**
+ * Server Action to verify checkout session and sync subscription
+ */
+export async function verifyCheckoutAction(
+  sessionId: string,
+  token: string
+): Promise<VerifyCheckoutResponse> {
+  try {
+    if (!sessionId) {
+      return {
+        success: false,
+        message: "Session ID não fornecido",
+      };
+    }
+
+    const response = await verifyCheckout(token, sessionId);
+    return response;
+  } catch (error) {
+    console.error("[VerifyCheckout Action Error]", error);
+
+    if (error instanceof HTTPError) {
+      return {
+        success: false,
+        message: await handleHttpError(error),
+      };
+    }
+
+    return {
+      success: false,
+      message: "Erro inesperado ao verificar checkout",
     };
   }
 }
