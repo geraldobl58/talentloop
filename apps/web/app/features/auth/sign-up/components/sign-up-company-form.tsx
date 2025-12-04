@@ -70,7 +70,7 @@ export const SignUpCompanyForm = ({
             margin="normal"
             label="Domínio da Empresa"
             placeholder="minha-empresa"
-            disabled={isLoading}
+            disabled={true}
             helperText={
               form.formState.errors.domain?.message ||
               "Este será o identificador único da sua empresa no sistema"
