@@ -11,7 +11,7 @@ import {
   CurrentPlanTab,
   UpgradePlanTab,
   PlanHistoryTab,
-} from "@/app/features/plans/candidate/components";
+} from "@/app/features/plans/components";
 
 enum PlanTab {
   CURRENT = "current",
@@ -58,11 +58,11 @@ const MyPlansPage = () => {
         </Box>
 
         <TabPanel value={PlanTab.CURRENT}>
-          <CurrentPlanTab />
+          <CurrentPlanTab tenantType="CANDIDATE" />
         </TabPanel>
 
         <TabPanel value={PlanTab.UPGRADE}>
-          <UpgradePlanTab />
+          <UpgradePlanTab tenantType="CANDIDATE" />
         </TabPanel>
 
         <TabPanel value={PlanTab.HISTORY}>
