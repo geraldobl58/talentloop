@@ -11,6 +11,7 @@ import {
   CheckoutSessionResponse,
   BillingPortalResponse,
   SubscriptionValidationResponse,
+  VerifyCheckoutResponse,
 } from "../types";
 
 /**
@@ -121,6 +122,22 @@ export async function createCheckoutSession(
       json: { priceId, successUrl, cancelUrl },
     })
     .json<CheckoutSessionResponse>();
+}
+
+/**
+ * Verify and sync checkout session after returning from Stripe
+ * This is an alternative to webhooks for local development
+ */
+export async function verifyCheckout(
+  token: string,
+  sessionId: string
+): Promise<VerifyCheckoutResponse> {
+  const api = createAuthApi(token);
+  return api
+    .post("plans/verify-checkout", {
+      json: { sessionId },
+    })
+    .json<VerifyCheckoutResponse>();
 }
 
 /**
