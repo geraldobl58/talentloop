@@ -7,7 +7,8 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { hash } from 'bcrypt';
-import { SubStatus, TenantType } from '@prisma/client';
+import { SubStatus, TenantType, RoleType } from '@prisma/client';
+import { RolesRepository } from '@/roles/repositories/roles.repository';
 import { AuthRepository } from '../repositories/auth.repository';
 import { PrismaService } from '@/libs/prisma/prisma.service';
 import { StripeService } from '@/stripe/services/stripe.service';
@@ -38,7 +39,6 @@ import {
 @Injectable()
 export class SignupCheckoutService {
   private readonly logger = new Logger(SignupCheckoutService.name);
-  private readonly CANDIDATES_TENANT_SLUG = 'candidates';
 
   constructor(
     private readonly configService: ConfigService,
@@ -47,6 +47,7 @@ export class SignupCheckoutService {
     private readonly jwtService: JwtService,
     private readonly stripeService: StripeService,
     private readonly emailService: EmailService,
+    private readonly rolesRepository: RolesRepository,
   ) {}
 
   // =============================================
@@ -58,33 +59,12 @@ export class SignupCheckoutService {
   ): Promise<SignupCandidateResponseDto> {
     this.logger.log('🚀 Starting candidate signup', { email: dto.email });
 
-    // Buscar ou criar o tenant de candidatos
-    let candidatesTenant = await this.authRepository.findTenantBySlug(
-      this.CANDIDATES_TENANT_SLUG,
-    );
+    // Verificar se já existe um tenant com este email (candidatos têm tenant individual)
+    const candidateSlug = this.generateCandidateSlug(dto.email);
+    const existingTenant =
+      await this.authRepository.findTenantBySlug(candidateSlug);
 
-    if (!candidatesTenant) {
-      this.logger.log('Creating candidates tenant...');
-      candidatesTenant = await this.prisma.tenant.create({
-        data: {
-          name: 'Candidatos',
-          slug: this.CANDIDATES_TENANT_SLUG,
-          type: TenantType.CANDIDATE,
-        },
-      });
-    }
-
-    // Verificar se já existe um usuário com este email
-    const existingUser = await this.prisma.user.findUnique({
-      where: {
-        tenantId_email: {
-          tenantId: candidatesTenant.id,
-          email: dto.email,
-        },
-      },
-    });
-
-    if (existingUser) {
+    if (existingTenant) {
       throw new ConflictException('Este email já está cadastrado');
     }
 
@@ -106,25 +86,37 @@ export class SignupCheckoutService {
     // PLANO FREE - Criar conta diretamente
     // =============================================
     if (dto.plan === CandidatePlanType.FREE) {
-      return this.createFreeCandidateAccount(dto, candidatesTenant.id, plan);
+      return this.createFreeCandidateAccount(dto, plan);
     }
 
     // =============================================
     // PLANOS PAGOS (PRO, PREMIUM) - Redirecionar para Stripe
     // =============================================
-    return this.createCandidateCheckoutSession(dto, candidatesTenant.id, plan);
+    return this.createCandidateCheckoutSession(dto, candidateSlug, plan);
   }
 
   /**
    * Cria conta de candidato FREE diretamente
+   * Cada candidato tem seu próprio tenant individual
    */
   private async createFreeCandidateAccount(
     dto: SignupCandidateDto,
-    tenantId: string,
     plan: any,
   ): Promise<SignupCandidateResponseDto> {
     const temporaryPassword = this.generateTemporaryPassword();
     const hashedPassword = await hash(temporaryPassword, 10);
+    const candidateSlug = this.generateCandidateSlug(dto.email);
+
+    // Criar tenant individual para o candidato
+    const candidateTenant = await this.prisma.tenant.create({
+      data: {
+        name: dto.name,
+        slug: candidateSlug,
+        type: TenantType.CANDIDATE,
+      },
+    });
+
+    const tenantId = candidateTenant.id;
 
     const user = await this.prisma.user.create({
       data: {
@@ -142,14 +134,21 @@ export class SignupCheckoutService {
       },
     });
 
-    // Garantir subscription do tenant
-    await this.ensureCandidateSubscription(tenantId, plan.id);
+    // Criar subscription para o tenant do candidato
+    await this.authRepository.createSubscription({
+      tenantId,
+      planId: plan.id,
+      status: SubStatus.ACTIVE,
+      startedAt: new Date(),
+      expiresAt: null, // FREE não expira
+    });
 
     // Gerar token JWT
     const token = this.jwtService.sign({
       sub: user.id,
       email: user.email,
       tenantId,
+      tenantSlug: candidateSlug,
       tenantType: TenantType.CANDIDATE,
     });
 
@@ -174,7 +173,11 @@ export class SignupCheckoutService {
       // Não falha o signup se o email não for enviado
     }
 
-    this.logger.log('✅ Candidate FREE account created', { userId: user.id });
+    this.logger.log('✅ Candidate FREE account created', {
+      userId: user.id,
+      tenantId,
+      plan: plan.name,
+    });
 
     return {
       success: true,
@@ -202,7 +205,7 @@ export class SignupCheckoutService {
    */
   private async createCandidateCheckoutSession(
     dto: SignupCandidateDto,
-    tenantId: string,
+    candidateSlug: string,
     plan: any,
   ): Promise<SignupCandidateResponseDto> {
     // Verificar se o plano tem priceId do Stripe configurado
@@ -220,11 +223,11 @@ export class SignupCheckoutService {
       },
     });
 
-    // Criar cliente no Stripe
+    // Criar cliente no Stripe (sem tenantId pois será criado após pagamento)
     const customer = await this.stripeService.createCustomer({
       email: dto.email,
       name: dto.name,
-      tenantId,
+      tenantId: candidateSlug, // Usamos o slug como referência temporária
     });
 
     // Salvar dados do checkout temporariamente
@@ -240,7 +243,7 @@ export class SignupCheckoutService {
         companyName: dto.name, // Para candidato, usamos o nome
         contactName: dto.name,
         contactEmail: dto.email,
-        domain: null, // Não usado para candidatos
+        domain: candidateSlug, // Armazenamos o slug aqui para usar após checkout
         planId: plan.id,
         planName: plan.name,
         successToken,
@@ -368,6 +371,9 @@ export class SignupCheckoutService {
       },
     });
 
+    // Atribuir role OWNER ao criador da empresa
+    await this.assignOwnerRole(user.id, tenant.id);
+
     // Criar subscription PENDING
     await this.authRepository.createSubscription({
       tenantId: tenant.id,
@@ -400,7 +406,7 @@ export class SignupCheckoutService {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: 'ADMIN',
+        role: 'OWNER',
       },
       plan: {
         id: plan.id,
@@ -524,10 +530,9 @@ export class SignupCheckoutService {
     }
 
     // Verificar se é candidato ou empresa
-    // Candidatos têm domain null ou igual ao slug de candidatos
+    // Candidatos têm domain começando com 'candidate-' (novo formato de slug individual)
     const isCandidate =
-      !checkoutData.domain ||
-      checkoutData.domain === this.CANDIDATES_TENANT_SLUG;
+      checkoutData.domain && checkoutData.domain.startsWith('candidate-');
 
     this.logger.log('Processing signup', {
       isCandidate,
@@ -555,25 +560,30 @@ export class SignupCheckoutService {
 
   /**
    * Completa signup de candidato após pagamento
+   * Cada candidato tem seu próprio tenant individual
    */
   private async completeCandidateSignup(
     checkoutData: any,
     plan: any,
   ): Promise<void> {
-    // Buscar tenant de candidatos
-    let candidatesTenant = await this.authRepository.findTenantBySlug(
-      this.CANDIDATES_TENANT_SLUG,
-    );
+    const candidateSlug = checkoutData.domain; // Armazenado no campo domain
 
-    if (!candidatesTenant) {
-      candidatesTenant = await this.prisma.tenant.create({
-        data: {
-          name: 'Candidatos',
-          slug: this.CANDIDATES_TENANT_SLUG,
-          type: TenantType.CANDIDATE,
-        },
-      });
+    // Verificar se tenant já existe (não deveria, mas por segurança)
+    const existingTenant =
+      await this.authRepository.findTenantBySlug(candidateSlug);
+    if (existingTenant) {
+      this.logger.error('Candidate tenant already exists', { candidateSlug });
+      throw new ConflictException('Este candidato já está cadastrado');
     }
+
+    // Criar tenant individual para o candidato
+    const candidateTenant = await this.prisma.tenant.create({
+      data: {
+        name: checkoutData.contactName,
+        slug: candidateSlug,
+        type: TenantType.CANDIDATE,
+      },
+    });
 
     // Criar usuário
     const temporaryPassword = this.generateTemporaryPassword();
@@ -581,7 +591,7 @@ export class SignupCheckoutService {
 
     const user = await this.prisma.user.create({
       data: {
-        tenantId: candidatesTenant.id,
+        tenantId: candidateTenant.id,
         name: checkoutData.contactName,
         email: checkoutData.contactEmail,
         password: hashedPassword,
@@ -589,35 +599,28 @@ export class SignupCheckoutService {
       },
     });
 
-    // Atualizar/criar subscription
-    const existingSubscription = await this.prisma.subscription.findUnique({
-      where: { tenantId: candidatesTenant.id },
+    // Calcular data de expiração baseado no billingPeriodDays do plano
+    const expiresAt =
+      plan.billingPeriodDays > 0
+        ? new Date(Date.now() + plan.billingPeriodDays * 24 * 60 * 60 * 1000)
+        : null;
+
+    // Criar subscription para o tenant do candidato
+    await this.authRepository.createSubscription({
+      tenantId: candidateTenant.id,
+      planId: plan.id,
+      status: SubStatus.ACTIVE,
+      startedAt: new Date(),
+      expiresAt,
     });
 
-    if (existingSubscription) {
-      await this.prisma.subscription.update({
-        where: { tenantId: candidatesTenant.id },
-        data: {
-          planId: plan.id,
-          stripeCustomerId: checkoutData.stripeCustomerId,
-          status: SubStatus.ACTIVE,
-        },
-      });
-    } else {
-      // Calcular data de expiração baseado no billingPeriodDays do plano
-      const expiresAt =
-        plan.billingPeriodDays > 0
-          ? new Date(Date.now() + plan.billingPeriodDays * 24 * 60 * 60 * 1000)
-          : null; // FREE plans don't expire
-
-      await this.authRepository.createSubscription({
-        tenantId: candidatesTenant.id,
-        planId: plan.id,
-        status: SubStatus.ACTIVE,
-        startedAt: new Date(),
-        expiresAt,
-      });
-    }
+    // Atualizar subscription com dados do Stripe
+    await this.prisma.subscription.update({
+      where: { tenantId: candidateTenant.id },
+      data: {
+        stripeCustomerId: checkoutData.stripeCustomerId,
+      },
+    });
 
     // Enviar email com credenciais
     try {
@@ -638,7 +641,9 @@ export class SignupCheckoutService {
 
     this.logger.log('✅ Candidate account created after payment', {
       userId: user.id,
+      tenantId: candidateTenant.id,
       email: checkoutData.contactEmail,
+      plan: plan.name,
     });
   }
 
@@ -662,7 +667,7 @@ export class SignupCheckoutService {
     const temporaryPassword = this.generateTemporaryPassword();
     const hashedPassword = await hash(temporaryPassword, 10);
 
-    await this.prisma.user.create({
+    const user = await this.prisma.user.create({
       data: {
         tenantId: tenant.id,
         name: checkoutData.contactName,
@@ -671,6 +676,9 @@ export class SignupCheckoutService {
         isActive: true,
       },
     });
+
+    // Atribuir role OWNER ao criador da empresa
+    await this.assignOwnerRole(user.id, tenant.id);
 
     // Calcular data de expiração baseado no billingPeriodDays do plano
     const expiresAt =
@@ -724,23 +732,17 @@ export class SignupCheckoutService {
   // HELPERS
   // =============================================
 
-  private async ensureCandidateSubscription(
-    tenantId: string,
-    planId: string,
-  ): Promise<void> {
-    const existingSubscription = await this.prisma.subscription.findUnique({
-      where: { tenantId },
-    });
-
-    if (!existingSubscription) {
-      await this.authRepository.createSubscription({
-        tenantId,
-        planId,
-        status: SubStatus.ACTIVE,
-        startedAt: new Date(),
-        expiresAt: null,
-      });
-    }
+  /**
+   * Gera um slug único para candidato baseado no email
+   * Formato: candidate-{hash de 12 caracteres}
+   */
+  private generateCandidateSlug(email: string): string {
+    const hash = Buffer.from(email.toLowerCase().trim())
+      .toString('base64')
+      .replace(/[^a-zA-Z0-9]/g, '')
+      .substring(0, 12)
+      .toLowerCase();
+    return `candidate-${hash}`;
   }
 
   private generateTemporaryPassword(): string {
@@ -768,5 +770,40 @@ export class SignupCheckoutService {
 
   private generateSuccessToken(): string {
     return `success_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+  }
+
+  /**
+   * Atribui role OWNER ao usuário que criou a empresa
+   */
+  private async assignOwnerRole(
+    userId: string,
+    tenantId: string,
+  ): Promise<void> {
+    try {
+      const ownerRole = await this.rolesRepository.findRoleByName(
+        RoleType.OWNER,
+      );
+      if (!ownerRole) {
+        this.logger.warn(
+          'OWNER role not found in database, skipping role assignment',
+        );
+        return;
+      }
+
+      await this.rolesRepository.assignRoleToUser(
+        userId,
+        ownerRole.id,
+        tenantId,
+        undefined, // assignedBy - sistema
+      );
+
+      this.logger.log('✅ OWNER role assigned to company creator', {
+        userId,
+        tenantId,
+      });
+    } catch (error) {
+      this.logger.error('Failed to assign OWNER role', error);
+      // Não falha o signup se a atribuição de role falhar
+    }
   }
 }
