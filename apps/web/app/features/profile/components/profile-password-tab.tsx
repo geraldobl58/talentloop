@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { memo, useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,7 +30,7 @@ import { useChangePassword } from "../hooks/use-change-password";
 
 const LOGOUT_DELAY_SECONDS = 5;
 
-export const ProfilePasswordTab = () => {
+export const ProfilePasswordTab = memo(() => {
   const router = useRouter();
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -110,10 +110,69 @@ export const ProfilePasswordTab = () => {
     };
   }, [isLoggingOut, router]);
 
-  const onSubmit = (data: ChangePasswordInput) => {
-    setFeedback(null);
-    changePassword(data);
-  };
+  // Memoize toggle handlers
+  const toggleCurrentPassword = useCallback(
+    () => setShowCurrentPassword((prev) => !prev),
+    []
+  );
+  const toggleNewPassword = useCallback(
+    () => setShowNewPassword((prev) => !prev),
+    []
+  );
+  const toggleConfirmPassword = useCallback(
+    () => setShowConfirmPassword((prev) => !prev),
+    []
+  );
+
+  const onSubmit = useCallback(
+    (data: ChangePasswordInput) => {
+      setFeedback(null);
+      changePassword(data);
+    },
+    [changePassword]
+  );
+
+  // Memoize password adornments to avoid recreating on each render
+  const currentPasswordAdornment = useMemo(
+    () => (
+      <InputAdornment position="end">
+        <IconButton
+          onClick={toggleCurrentPassword}
+          edge="end"
+          disabled={isPending}
+        >
+          {showCurrentPassword ? <VisibilityOff /> : <Visibility />}
+        </IconButton>
+      </InputAdornment>
+    ),
+    [showCurrentPassword, isPending, toggleCurrentPassword]
+  );
+
+  const newPasswordAdornment = useMemo(
+    () => (
+      <InputAdornment position="end">
+        <IconButton onClick={toggleNewPassword} edge="end" disabled={isPending}>
+          {showNewPassword ? <VisibilityOff /> : <Visibility />}
+        </IconButton>
+      </InputAdornment>
+    ),
+    [showNewPassword, isPending, toggleNewPassword]
+  );
+
+  const confirmPasswordAdornment = useMemo(
+    () => (
+      <InputAdornment position="end">
+        <IconButton
+          onClick={toggleConfirmPassword}
+          edge="end"
+          disabled={isPending}
+        >
+          {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+        </IconButton>
+      </InputAdornment>
+    ),
+    [showConfirmPassword, isPending, toggleConfirmPassword]
+  );
 
   return (
     <Box className="space-y-6">
@@ -180,23 +239,7 @@ export const ProfilePasswordTab = () => {
                     disabled={isPending}
                     slotProps={{
                       input: {
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <IconButton
-                              onClick={() =>
-                                setShowCurrentPassword(!showCurrentPassword)
-                              }
-                              edge="end"
-                              disabled={isPending}
-                            >
-                              {showCurrentPassword ? (
-                                <VisibilityOff />
-                              ) : (
-                                <Visibility />
-                              )}
-                            </IconButton>
-                          </InputAdornment>
-                        ),
+                        endAdornment: currentPasswordAdornment,
                       },
                     }}
                   />
@@ -213,23 +256,7 @@ export const ProfilePasswordTab = () => {
                     disabled={isPending}
                     slotProps={{
                       input: {
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <IconButton
-                              onClick={() =>
-                                setShowNewPassword(!showNewPassword)
-                              }
-                              edge="end"
-                              disabled={isPending}
-                            >
-                              {showNewPassword ? (
-                                <VisibilityOff />
-                              ) : (
-                                <Visibility />
-                              )}
-                            </IconButton>
-                          </InputAdornment>
-                        ),
+                        endAdornment: newPasswordAdornment,
                       },
                     }}
                   />
@@ -246,23 +273,7 @@ export const ProfilePasswordTab = () => {
                     disabled={isPending}
                     slotProps={{
                       input: {
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <IconButton
-                              onClick={() =>
-                                setShowConfirmPassword(!showConfirmPassword)
-                              }
-                              edge="end"
-                              disabled={isPending}
-                            >
-                              {showConfirmPassword ? (
-                                <VisibilityOff />
-                              ) : (
-                                <Visibility />
-                              )}
-                            </IconButton>
-                          </InputAdornment>
-                        ),
+                        endAdornment: confirmPasswordAdornment,
                       },
                     }}
                   />
@@ -293,4 +304,6 @@ export const ProfilePasswordTab = () => {
       </Card>
     </Box>
   );
-};
+});
+
+ProfilePasswordTab.displayName = "ProfilePasswordTab";
