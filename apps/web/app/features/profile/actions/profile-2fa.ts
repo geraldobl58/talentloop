@@ -58,8 +58,6 @@ export async function generate2FAAction(
   token: string
 ): Promise<Generate2FAActionState> {
   try {
-    console.log("[Generate2FA Debug] Generating 2FA secret");
-
     const response = await generate2FA(token);
 
     if (!response.success) {
@@ -119,8 +117,6 @@ export async function enable2FAAction(
   try {
     // Validate token using schema
     const validatedData = enable2FASchema.parse({ token });
-
-    console.log("[Enable2FA Debug] Enabling 2FA");
 
     const response = await enable2FA(validatedData.token, authToken);
 
@@ -193,8 +189,6 @@ export async function disable2FAAction(
     // Validate token using schema
     const validatedData = disable2FASchema.parse({ token });
 
-    console.log("[Disable2FA Debug] Disabling 2FA");
-
     const response = await disable2FA(validatedData.token, authToken);
 
     if (!response.success) {
@@ -261,8 +255,6 @@ export async function check2FAStatusAction(
   token: string
 ): Promise<Check2FAStatusActionState> {
   try {
-    console.log("[Check2FAStatus Debug] Checking 2FA status");
-
     const response = await check2FAStatus(token);
 
     if (!response.success) {
@@ -322,8 +314,6 @@ export async function regenerateBackupCodesAction(
   try {
     // Validate token using schema
     const validatedData = disable2FASchema.parse({ token: twoFactorToken });
-
-    console.log("[RegenerateBackupCodes Debug] Regenerating backup codes");
 
     const response = await regenerateBackupCodes(
       validatedData.token,

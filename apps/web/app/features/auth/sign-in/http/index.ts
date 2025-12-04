@@ -6,6 +6,8 @@ import {
   SignInRequest,
   SignInResponse,
   SignInApiResponse,
+  RefreshTokenApiResponse,
+  RefreshTokenResponse,
 } from "../types/user-type";
 
 /**
@@ -38,5 +40,37 @@ export async function signIn(data: SignInRequest): Promise<SignInResponse> {
       throw error;
     }
     throw error;
+  }
+}
+
+/**
+ * Refresh do access token
+ * Requer que o usuário esteja autenticado (token atual ainda válido)
+ */
+export async function refreshToken(): Promise<RefreshTokenResponse> {
+  try {
+    const response = await api
+      .post("auth/refresh")
+      .json<RefreshTokenApiResponse>();
+
+    return {
+      success: true,
+      token: response.access_token,
+      tenantType: response.tenantType,
+    };
+  } catch (error) {
+    if (error instanceof HTTPError) {
+      const errorData = (await error.response.json().catch(() => ({}))) as {
+        message?: string;
+      };
+      return {
+        success: false,
+        message: errorData.message || "Sessão expirada. Faça login novamente.",
+      };
+    }
+    return {
+      success: false,
+      message: "Erro ao renovar sessão.",
+    };
   }
 }

@@ -72,9 +72,9 @@ export class PasswordService {
     // Enviar email de reset de senha
     const frontendUrl = this.configService.get<string>(
       'FRONTEND_URL',
-      'http://localhost:3000',
+      APP_CONSTANTS.URLS.DEFAULT_APP_URL,
     );
-    const resetLink = `${frontendUrl}/auth/reset-password?token=${token}`;
+    const resetLink = `${frontendUrl}${APP_CONSTANTS.ROUTES.RESET_PASSWORD}?token=${token}`;
 
     try {
       await this.emailService.sendPasswordReset({

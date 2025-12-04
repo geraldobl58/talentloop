@@ -12,6 +12,7 @@ import { AuthRepository } from '../repositories/auth.repository';
 import { PrismaService } from '@/libs/prisma/prisma.service';
 import { StripeService } from '@/stripe/services/stripe.service';
 import { EmailService } from '@/email/services/email.service';
+import { APP_CONSTANTS } from '@/libs/common/constants';
 import {
   SignupCandidateDto,
   SignupCandidateResponseDto,
@@ -155,14 +156,15 @@ export class SignupCheckoutService {
     // Enviar email de boas-vindas com credenciais
     try {
       const appUrl =
-        this.configService.get<string>('APP_URL') || 'http://localhost:3000';
+        this.configService.get<string>('APP_URL') ||
+        APP_CONSTANTS.URLS.DEFAULT_APP_URL;
       await this.emailService.sendWelcome({
         to: dto.email,
         userName: dto.name,
         email: dto.email,
         password: temporaryPassword,
         planName: plan.name,
-        loginUrl: `${appUrl}/auth/sign-in`,
+        loginUrl: `${appUrl}${APP_CONSTANTS.ROUTES.SIGN_IN}`,
       });
       this.logger.log('✅ Welcome email sent to candidate', {
         email: dto.email,
@@ -227,7 +229,8 @@ export class SignupCheckoutService {
 
     // Salvar dados do checkout temporariamente
     const appUrl =
-      this.configService.get<string>('APP_URL') || 'http://localhost:3000';
+      this.configService.get<string>('APP_URL') ||
+      APP_CONSTANTS.URLS.DEFAULT_APP_URL;
     const successToken = this.generateSuccessToken();
 
     await this.prisma.stripeCheckoutSession.create({
@@ -432,7 +435,8 @@ export class SignupCheckoutService {
 
     // Salvar dados do checkout temporariamente
     const appUrl =
-      this.configService.get<string>('APP_URL') || 'http://localhost:3000';
+      this.configService.get<string>('APP_URL') ||
+      APP_CONSTANTS.URLS.DEFAULT_APP_URL;
     const successToken = this.generateSuccessToken();
 
     await this.prisma.stripeCheckoutSession.create({
@@ -618,14 +622,15 @@ export class SignupCheckoutService {
     // Enviar email com credenciais
     try {
       const appUrl =
-        this.configService.get<string>('APP_URL') || 'http://localhost:3000';
+        this.configService.get<string>('APP_URL') ||
+        APP_CONSTANTS.URLS.DEFAULT_APP_URL;
       await this.emailService.sendWelcome({
         to: checkoutData.contactEmail,
         userName: checkoutData.contactName,
         email: checkoutData.contactEmail,
         password: temporaryPassword,
         planName: plan.name,
-        loginUrl: `${appUrl}/auth/sign-in`,
+        loginUrl: `${appUrl}${APP_CONSTANTS.ROUTES.SIGN_IN}`,
       });
     } catch (error) {
       this.logger.error('Failed to send welcome email', error);
@@ -693,14 +698,15 @@ export class SignupCheckoutService {
     // Enviar email com credenciais
     try {
       const appUrl =
-        this.configService.get<string>('APP_URL') || 'http://localhost:3000';
+        this.configService.get<string>('APP_URL') ||
+        APP_CONSTANTS.URLS.DEFAULT_APP_URL;
       await this.emailService.sendWelcome({
         to: checkoutData.contactEmail,
         userName: checkoutData.contactName,
         email: checkoutData.contactEmail,
         password: temporaryPassword,
         planName: plan.name,
-        loginUrl: `${appUrl}/auth/sign-in?tenant=${checkoutData.domain}`,
+        loginUrl: `${appUrl}${APP_CONSTANTS.ROUTES.SIGN_IN}?tenant=${checkoutData.domain}`,
         companyName: checkoutData.companyName,
         tenantId: checkoutData.domain,
       });

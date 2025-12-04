@@ -33,8 +33,6 @@ export async function changePasswordAction(
       confirmPassword,
     });
 
-    console.log("[ChangePassword Debug] Changing password for user");
-
     // Call the API to change password with token
     const response = await changePassword(
       validatedData.currentPassword,

@@ -29,12 +29,6 @@ export async function uploadAvatarAction(
     // Validate file using schema
     const validatedFile = avatarUploadSchema.parse({ file });
 
-    console.log("[UploadAvatar Debug] Uploading avatar", {
-      fileName: validatedFile.file.name,
-      fileSize: validatedFile.file.size,
-      fileType: validatedFile.file.type,
-    });
-
     // Call the API to upload avatar with token
     const response = await uploadAvatar(validatedFile.file, token);
 

@@ -66,6 +66,19 @@ export const APP_CONSTANTS = {
     BACKUP_CODES_REGEN_GRACE_PERIOD_DAYS: 7,
     SOFT_DELETE_RETENTION_DAYS: 90,
   },
+
+  // URLs - Default fallbacks (deve usar APP_URL env em produção)
+  URLS: {
+    DEFAULT_APP_URL: 'http://localhost:3000',
+  },
+
+  // Auth Routes
+  ROUTES: {
+    SIGN_IN: '/auth/sign-in',
+    SIGN_UP: '/auth/sign-up',
+    SUCCESS: '/auth/success',
+    RESET_PASSWORD: '/auth/reset-password',
+  },
 } as const;
 
 export const EMAIL_SUBJECTS = {

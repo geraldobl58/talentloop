@@ -52,3 +52,21 @@ export interface SignInResponse {
     name: string;
   };
 }
+
+/**
+ * Resposta da API de refresh token
+ */
+export interface RefreshTokenApiResponse {
+  access_token: string;
+  tenantType?: "CANDIDATE" | "COMPANY";
+}
+
+/**
+ * Resposta processada de refresh token
+ */
+export interface RefreshTokenResponse {
+  success: boolean;
+  token?: string;
+  tenantType?: "CANDIDATE" | "COMPANY";
+  message?: string;
+}

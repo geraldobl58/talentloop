@@ -1,13 +1,8 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-
 import "./globals.css";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClientProvider } from "./providers/query-provider";
-import { EmotionRegistry } from "./providers/emotion-registry";
-import { ThemeProvider } from "./providers/theme-provider";
+import { Providers } from "./providers";
 
 const montserrat = Montserrat({
   variable: "--font-montserrat-sans",
@@ -30,12 +25,7 @@ export default function RootLayout({
       <body
         className={`${montserrat.variable} ${montserrat.variable} antialiased`}
       >
-        <QueryClientProvider client={queryClientProvider}>
-          <EmotionRegistry>
-            <ThemeProvider>{children}</ThemeProvider>
-          </EmotionRegistry>
-          <ReactQueryDevtools />
-        </QueryClientProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

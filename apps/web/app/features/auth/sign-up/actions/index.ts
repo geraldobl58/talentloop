@@ -29,12 +29,6 @@ export async function signUpCandidateAction(
 
     const data = validationResult.data;
 
-    console.log("[SignUp Candidate Debug]", {
-      name: data.name,
-      email: data.email,
-      plan: data.plan,
-    });
-
     const response = await signUpCandidate({
       name: data.name,
       email: data.email,
@@ -117,14 +111,6 @@ export async function signUpCompanyAction(
     }
 
     const data = validationResult.data;
-
-    console.log("[SignUp Company Debug]", {
-      companyName: data.companyName,
-      domain: data.domain,
-      contactName: data.contactName,
-      contactEmail: data.contactEmail,
-      plan: data.plan,
-    });
 
     const response = await signUpCompany({
       companyName: data.companyName,
