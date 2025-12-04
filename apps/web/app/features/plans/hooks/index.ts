@@ -17,11 +17,13 @@ import {
   reactivatePlanAction,
   createCheckoutSessionAction,
   createBillingPortalAction,
+  verifyCheckoutAction,
 } from "../actions";
 import {
   UpgradeActionState,
   PlanActionState,
   CheckoutActionState,
+  VerifyCheckoutResponse,
 } from "../types";
 
 /**
@@ -266,6 +268,43 @@ export function useBillingPortal(options?: UseBillingPortalOptions) {
       return createBillingPortalAction(returnUrl, token);
     },
     onSuccess: (data) => {
+      options?.onSuccess?.(data);
+    },
+    onError: (error: Error) => {
+      options?.onError?.(error);
+    },
+  });
+}
+
+// Options for verify checkout hook
+interface UseVerifyCheckoutOptions {
+  onSuccess?: (data: VerifyCheckoutResponse) => void;
+  onError?: (error: Error) => void;
+}
+
+/**
+ * Hook to verify checkout session and sync subscription
+ * Alternative to webhooks for local development
+ */
+export function useVerifyCheckout(options?: UseVerifyCheckoutOptions) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (sessionId: string) => {
+      const token = getCookie(APP_CONSTANTS.COOKIES.ACCESS_TOKEN) as string;
+      if (!token) throw new Error("Token de autenticação não encontrado");
+      return verifyCheckoutAction(sessionId, token);
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        // Invalidate plan queries to refresh UI with new subscription
+        queryClient.invalidateQueries({ queryKey: planQueryKeys.info() });
+        queryClient.invalidateQueries({ queryKey: planQueryKeys.available() });
+        queryClient.invalidateQueries({ queryKey: planQueryKeys.history() });
+        queryClient.invalidateQueries({
+          queryKey: planQueryKeys.historyDetailed(),
+        });
+      }
       options?.onSuccess?.(data);
     },
     onError: (error: Error) => {
