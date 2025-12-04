@@ -8,6 +8,7 @@ import { PrismaModule } from '@/libs/prisma/prisma.module';
 import { StripeModule } from '@/stripe/stripe.module';
 import { PlansModule } from '@/plans/plans.module';
 import { EmailModule } from '@/email/email.module';
+import { RolesModule } from '@/roles/roles.module';
 import { APP_CONSTANTS } from '@/libs/common/constants';
 
 // Repositories
@@ -34,6 +35,7 @@ import { JwtStrategy } from './jwt.strategy';
     ConfigModule,
     PassportModule,
     PrismaModule,
+    RolesModule,
     forwardRef(() => StripeModule),
     forwardRef(() => PlansModule),
     forwardRef(() => EmailModule),
