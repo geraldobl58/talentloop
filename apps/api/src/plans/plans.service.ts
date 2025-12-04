@@ -228,6 +228,9 @@ export class PlansService {
       'user',
     );
 
+    // Enviar email de reativação
+    await this.sendReactivationEmail(tenantId, subscription.plan);
+
     return {
       success: true,
       message: `Plano ${subscription.plan.name} reativado com sucesso`,
@@ -422,6 +425,13 @@ export class PlansService {
       });
 
       customerId = customer.id;
+
+      // Save the stripeCustomerId on the existing subscription
+      if (existingSubscription) {
+        await this.planRepository.updateSubscription(tenantId, {
+          stripeCustomerId: customerId,
+        });
+      }
     }
 
     return await this.stripeService.createCheckoutSession(
@@ -430,6 +440,145 @@ export class PlansService {
       successUrl,
       cancelUrl,
     );
+  }
+
+  /**
+   * Verify a checkout session and sync subscription status
+   * This is an alternative to webhooks for local development
+   */
+  async verifyAndSyncCheckout(
+    tenantId: string,
+    sessionId: string,
+  ): Promise<{ success: boolean; message: string; plan?: string }> {
+    this.logger.log('Verifying checkout session', { tenantId, sessionId });
+
+    try {
+      // Get checkout session from Stripe
+      const session = await this.stripeService.getCheckoutSession(sessionId);
+
+      this.logger.log('Checkout session retrieved', {
+        status: session.status,
+        paymentStatus: session.payment_status,
+        subscriptionId:
+          typeof session.subscription === 'string'
+            ? session.subscription
+            : session.subscription?.id,
+      });
+
+      // Check if payment was successful
+      if (session.status !== 'complete' || session.payment_status !== 'paid') {
+        return {
+          success: false,
+          message: 'Pagamento não foi concluído',
+        };
+      }
+
+      // Get the subscription from the session
+      const stripeSubscription = session.subscription;
+      const stripeSubscriptionId =
+        typeof stripeSubscription === 'string'
+          ? stripeSubscription
+          : stripeSubscription?.id;
+
+      if (!stripeSubscriptionId) {
+        return {
+          success: false,
+          message: 'Subscription não encontrada na sessão',
+        };
+      }
+
+      // Get price ID from the session
+      const lineItems =
+        await this.stripeService.getCheckoutSessionLineItems(sessionId);
+      const priceId = lineItems?.data?.[0]?.price?.id;
+
+      if (!priceId) {
+        return {
+          success: false,
+          message: 'Price ID não encontrado',
+        };
+      }
+
+      // Find the plan by stripe price ID
+      const plan = await this.planRepository.findPlanByStripePriceId(priceId);
+
+      if (!plan) {
+        return {
+          success: false,
+          message: 'Plano não encontrado para este price ID',
+        };
+      }
+
+      // Get existing subscription
+      const existingSubscription =
+        await this.planRepository.getCurrentSubscription(tenantId);
+
+      if (!existingSubscription) {
+        return {
+          success: false,
+          message: 'Subscription não encontrada para este tenant',
+        };
+      }
+
+      // Calculate expiration date
+      const expiresAt =
+        plan.billingPeriodDays > 0
+          ? new Date(Date.now() + plan.billingPeriodDays * 24 * 60 * 60 * 1000)
+          : null;
+
+      // Get customer ID
+      const customerId =
+        typeof session.customer === 'string'
+          ? session.customer
+          : session.customer?.id;
+
+      // Update the subscription
+      await this.planRepository.updateSubscription(tenantId, {
+        planId: plan.id,
+        stripeSubscriptionId,
+        stripeCustomerId: customerId,
+        status: SubStatus.ACTIVE,
+        startedAt: new Date(),
+        expiresAt,
+      });
+
+      // Log the upgrade action
+      await this.planRepository.recordHistory({
+        tenantId,
+        subscriptionId: existingSubscription.id,
+        action: SubscriptionAction.UPGRADED,
+        previousPlanId: existingSubscription.planId,
+        previousPlanName: existingSubscription.plan?.name,
+        newPlanId: plan.id,
+        newPlanName: plan.name,
+        reason: `Checkout session: ${sessionId}`,
+        triggeredBy: 'verify-checkout',
+      });
+
+      // Send upgrade email notification
+      if (existingSubscription.plan) {
+        await this.sendUpgradeEmail(tenantId, existingSubscription.plan, plan);
+      }
+
+      this.logger.log('✅ Subscription synced successfully', {
+        tenantId,
+        newPlan: plan.name,
+        stripeSubscriptionId,
+      });
+
+      return {
+        success: true,
+        message: `Plano atualizado para ${plan.name} com sucesso!`,
+        plan: plan.name,
+      };
+    } catch (error) {
+      this.logger.error('Error verifying checkout', error);
+      return {
+        success: false,
+        message:
+          error instanceof Error ? error.message : 'Erro ao verificar checkout',
+      };
+    }
   }
 
   async getSubscriptionLimits(tenantId: string) {
@@ -762,6 +911,62 @@ export class PlansService {
     } catch (error) {
       this.logger.error(
         `[upgradeSubscription] Erro ao preparar dados do email`,
+        {
+          error: error instanceof Error ? error.message : String(error),
+          tenantId,
+        },
+      );
+    }
+  }
+
+  private async sendReactivationEmail(
+    tenantId: string,
+    plan: Plan,
+  ): Promise<void> {
+    try {
+      const [tenant, adminUser] = await Promise.all([
+        this.planRepository.getTenantById(tenantId),
+        this.planRepository.getActiveAdminUser(tenantId),
+      ]);
+
+      if (tenant && adminUser) {
+        this.logger.log(
+          `[reactivateSubscription] Enviando email de reativação`,
+          {
+            tenantId,
+            plan: plan.name,
+            email: adminUser.email,
+          },
+        );
+
+        // Use the upgrade email template with same plan (reactivation)
+        await this.emailService
+          .sendUpgradeEmail({
+            companyName: tenant.name,
+            contactName: adminUser.name,
+            contactEmail: adminUser.email,
+            oldPlanName: `${plan.name} (Cancelado)`,
+            newPlanName: `${plan.name} (Reativado)`,
+            newPlanPrice: plan.price,
+            currency: plan.currency,
+            newMaxUsers: plan.maxUsers || 0,
+            newMaxContacts: plan.maxContacts || 0,
+            hasAPI: plan.hasAPI,
+          })
+          .catch((error) => {
+            this.logger.error(
+              `[reactivateSubscription] Erro ao enviar email de reativação`,
+              {
+                error: (error as Error).message,
+                tenantId,
+                email: adminUser.email,
+              },
+            );
+          });
+      }
+    } catch (error) {
+      this.logger.error(
+        `[reactivateSubscription] Erro ao preparar dados do email`,
         {
           error: error instanceof Error ? error.message : String(error),
           tenantId,
