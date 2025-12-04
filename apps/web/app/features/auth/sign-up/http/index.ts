@@ -13,7 +13,7 @@ import {
 export async function signUpCandidate(
   data: CandidateSignUpRequest
 ): Promise<SignUpResponse> {
-  const successUrl = `${env.NEXT_PUBLIC_APP_URL}/auth/success`;
+  const successUrl = `${env.NEXT_PUBLIC_APP_URL}/auth/success?type=candidate`;
   const cancelUrl = `${env.NEXT_PUBLIC_APP_URL}/auth/sign-up`;
 
   const response = await api
@@ -37,7 +37,7 @@ export async function signUpCandidate(
 export async function signUpCompany(
   data: CompanySignUpRequest
 ): Promise<SignUpResponse> {
-  const successUrl = `${env.NEXT_PUBLIC_APP_URL}/auth/success`;
+  const successUrl = `${env.NEXT_PUBLIC_APP_URL}/auth/success?type=company`;
   const cancelUrl = `${env.NEXT_PUBLIC_APP_URL}/auth/sign-up`;
 
   const response = await api
