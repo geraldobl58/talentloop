@@ -173,6 +173,14 @@ export interface PlanHistoryDetailEvent {
 // Checkout session response
 export interface CheckoutSessionResponse {
   url: string;
+  sessionId: string;
+}
+
+// Verify checkout response
+export interface VerifyCheckoutResponse {
+  success: boolean;
+  message: string;
+  plan?: string;
 }
 
 // Billing portal response
@@ -198,6 +206,7 @@ export interface UpgradeActionState extends PlanActionState {
 
 export interface CheckoutActionState extends PlanActionState {
   url?: string;
+  sessionId?: string;
 }
 
 // Plan display configuration
