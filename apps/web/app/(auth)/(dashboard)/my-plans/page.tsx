@@ -1,11 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { getCookie } from "cookies-next";
 import TabContext from "@mui/lab/TabContext";
 import TabList from "@mui/lab/TabList";
 import TabPanel from "@mui/lab/TabPanel";
 import { Box, Tab, Paper } from "@mui/material";
 import { CreditCard, TrendingUp, History } from "@mui/icons-material";
+
+import { APP_CONSTANTS } from "@/app/libs/constants";
+import { TenantType } from "@/app/features/plans/types";
 
 import {
   CurrentPlanTab,
@@ -21,6 +25,10 @@ enum PlanTab {
 
 const MyPlansPage = () => {
   const [activeTab, setActiveTab] = useState(PlanTab.CURRENT);
+
+  // Get tenant type from cookie (set during login)
+  const tenantType =
+    (getCookie(APP_CONSTANTS.COOKIES.TENANT_TYPE) as TenantType) || "CANDIDATE";
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: PlanTab) => {
     setActiveTab(newValue);
@@ -58,11 +66,11 @@ const MyPlansPage = () => {
         </Box>
 
         <TabPanel value={PlanTab.CURRENT}>
-          <CurrentPlanTab tenantType="CANDIDATE" />
+          <CurrentPlanTab tenantType={tenantType} />
         </TabPanel>
 
         <TabPanel value={PlanTab.UPGRADE}>
-          <UpgradePlanTab tenantType="CANDIDATE" />
+          <UpgradePlanTab tenantType={tenantType} />
         </TabPanel>
 
         <TabPanel value={PlanTab.HISTORY}>
