@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useMemo } from "react";
 import {
   Box,
   Card,
@@ -17,7 +18,35 @@ interface ProfileDataTabProps {
   profile: UserProfile | undefined;
 }
 
-export const ProfileDataTab = ({ profile }: ProfileDataTabProps) => {
+export const ProfileDataTab = memo(({ profile }: ProfileDataTabProps) => {
+  // Memoize computed values
+  const { accountTypeLabel, accountTypeColor, planName, planExpiryDate } =
+    useMemo(
+      () => ({
+        accountTypeLabel:
+          profile?.tenantType === "COMPANY" ? "Empresa" : "Candidato",
+        accountTypeColor:
+          profile?.tenantType === "COMPANY"
+            ? ("info" as const)
+            : ("primary" as const),
+        planName: profile?.tenant?.plan || "FREE",
+        planExpiryDate: formatDate(profile?.tenant?.planExpiresAt ?? null),
+      }),
+      [
+        profile?.tenantType,
+        profile?.tenant?.plan,
+        profile?.tenant?.planExpiresAt,
+      ]
+    );
+
+  const tenantInfoTitle = useMemo(
+    () =>
+      profile?.tenantType === "COMPANY"
+        ? "Informações da Empresa"
+        : "Informações da Conta",
+    [profile?.tenantType]
+  );
+
   if (!profile) return null;
 
   return (
@@ -49,9 +78,7 @@ export const ProfileDataTab = ({ profile }: ProfileDataTabProps) => {
       <Card variant="outlined">
         <CardContent>
           <Typography variant="h6" className="mb-4 flex items-center gap-2">
-            {profile.tenantType === "COMPANY"
-              ? "Informações da Empresa"
-              : "Informações da Conta"}
+            {tenantInfoTitle}
           </Typography>
 
           <Grid container spacing={3}>
@@ -61,10 +88,8 @@ export const ProfileDataTab = ({ profile }: ProfileDataTabProps) => {
                   Tipo de Conta:
                 </Typography>
                 <Chip
-                  label={
-                    profile.tenantType === "COMPANY" ? "Empresa" : "Candidato"
-                  }
-                  color={profile.tenantType === "COMPANY" ? "info" : "primary"}
+                  label={accountTypeLabel}
+                  color={accountTypeColor}
                   size="small"
                 />
               </Box>
@@ -132,11 +157,7 @@ export const ProfileDataTab = ({ profile }: ProfileDataTabProps) => {
                 <Typography variant="body2" color="text.secondary">
                   Plano Atual:
                 </Typography>
-                <Chip
-                  label={profile.tenant?.plan || "FREE"}
-                  color="info"
-                  size="small"
-                />
+                <Chip label={planName} color="info" size="small" />
               </Box>
             </Grid>
 
@@ -145,9 +166,7 @@ export const ProfileDataTab = ({ profile }: ProfileDataTabProps) => {
                 <Typography variant="body2" color="text.secondary">
                   Expira em:
                 </Typography>
-                <Typography variant="body2">
-                  {formatDate(profile.tenant?.planExpiresAt ?? null)}
-                </Typography>
+                <Typography variant="body2">{planExpiryDate}</Typography>
               </Box>
             </Grid>
           </Grid>
@@ -155,4 +174,6 @@ export const ProfileDataTab = ({ profile }: ProfileDataTabProps) => {
       </Card>
     </Box>
   );
-};
+});
+
+ProfileDataTab.displayName = "ProfileDataTab";
