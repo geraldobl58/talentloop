@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState, useCallback, useMemo } from "react";
 import {
   Box,
   Card,
@@ -29,199 +29,220 @@ interface PlanActionsCardProps {
   }) => void;
 }
 
-export const PlanActionsCard = ({
-  plan,
-  tenantType,
-  onFeedback,
-}: PlanActionsCardProps) => {
-  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+export const PlanActionsCard = memo(
+  ({ plan, tenantType, onFeedback }: PlanActionsCardProps) => {
+    const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
-  const isFree = isFreePlan(plan.name, tenantType);
-  const isPlanCancelled = plan.status === "CANCELLED";
-  const displayName = getPlanDisplayName(plan.name, tenantType);
+    // Memoize computed values
+    const {
+      isFree,
+      isPlanCancelled,
+      displayName,
+      expiryDate,
+      canAccessBillingPortal,
+      isActive,
+    } = useMemo(() => {
+      const free = isFreePlan(plan.name, tenantType);
+      return {
+        isFree: free,
+        isPlanCancelled: plan.status === "CANCELLED",
+        displayName: getPlanDisplayName(plan.name, tenantType),
+        expiryDate: formatDate(plan.planExpiresAt),
+        canAccessBillingPortal: !free,
+        isActive: plan.status === "ACTIVE",
+      };
+    }, [plan, tenantType]);
 
-  const { mutate: cancelPlan, isPending: isCancelling } = useCancelPlan({
-    onSuccess: (data) => {
-      setCancelDialogOpen(false);
-      onFeedback({
-        type: data.success ? "success" : "error",
-        message:
-          data.message ||
-          (data.success ? "Plano cancelado!" : "Erro ao cancelar"),
-      });
-    },
-    onError: (error) => {
-      setCancelDialogOpen(false);
-      onFeedback({
-        type: "error",
-        message: error.message || "Erro inesperado ao cancelar plano",
-      });
-    },
-  });
+    // Memoize dialog handlers
+    const openCancelDialog = useCallback(() => setCancelDialogOpen(true), []);
+    const closeCancelDialog = useCallback(() => setCancelDialogOpen(false), []);
 
-  const { mutate: reactivatePlan, isPending: isReactivating } =
-    useReactivatePlan({
+    const { mutate: cancelPlan, isPending: isCancelling } = useCancelPlan({
       onSuccess: (data) => {
+        closeCancelDialog();
         onFeedback({
           type: data.success ? "success" : "error",
           message:
             data.message ||
-            (data.success ? "Plano reativado!" : "Erro ao reativar"),
+            (data.success ? "Plano cancelado!" : "Erro ao cancelar"),
         });
       },
       onError: (error) => {
+        closeCancelDialog();
         onFeedback({
           type: "error",
-          message: error.message || "Erro inesperado ao reativar plano",
+          message: error.message || "Erro inesperado ao cancelar plano",
         });
       },
     });
 
-  const { mutate: openBillingPortal, isPending: isOpeningPortal } =
-    useBillingPortal({
-      onSuccess: (data) => {
-        if (data.success && data.url) {
-          window.open(data.url, "_blank");
-        } else {
+    const { mutate: reactivatePlan, isPending: isReactivating } =
+      useReactivatePlan({
+        onSuccess: (data) => {
           onFeedback({
-            type: "error",
-            message: data.message || "Erro ao abrir portal de cobrança",
-          });
-        }
-      },
-      onError: (error) => {
-        // Trata erro de customer não encontrado no Stripe
-        const errorMessage = error.message || "";
-        if (
-          errorMessage.includes("No such customer") ||
-          errorMessage.includes("Customer Stripe não encontrado")
-        ) {
-          onFeedback({
-            type: "error",
+            type: data.success ? "success" : "error",
             message:
-              "Portal de pagamento não disponível. Por favor, entre em contato com o suporte.",
+              data.message ||
+              (data.success ? "Plano reativado!" : "Erro ao reativar"),
           });
-        } else {
+        },
+        onError: (error) => {
           onFeedback({
             type: "error",
-            message: errorMessage || "Erro inesperado ao abrir portal",
+            message: error.message || "Erro inesperado ao reativar plano",
           });
-        }
-      },
-    });
+        },
+      });
 
-  const handleOpenBillingPortal = () => {
-    const returnUrl = window.location.href;
-    openBillingPortal(returnUrl);
-  };
+    const { mutate: openBillingPortal, isPending: isOpeningPortal } =
+      useBillingPortal({
+        onSuccess: (data) => {
+          if (data.success && data.url) {
+            window.open(data.url, "_blank");
+          } else {
+            onFeedback({
+              type: "error",
+              message: data.message || "Erro ao abrir portal de cobrança",
+            });
+          }
+        },
+        onError: (error) => {
+          // Trata erro de customer não encontrado no Stripe
+          const errorMessage = error.message || "";
+          if (
+            errorMessage.includes("No such customer") ||
+            errorMessage.includes("Customer Stripe não encontrado")
+          ) {
+            onFeedback({
+              type: "error",
+              message:
+                "Portal de pagamento não disponível. Por favor, entre em contato com o suporte.",
+            });
+          } else {
+            onFeedback({
+              type: "error",
+              message: errorMessage || "Erro inesperado ao abrir portal",
+            });
+          }
+        },
+      });
 
-  // Show billing portal for paid plans
-  const canAccessBillingPortal = !isFree;
+    const handleOpenBillingPortal = useCallback(() => {
+      const returnUrl = window.location.href;
+      openBillingPortal(returnUrl);
+    }, [openBillingPortal]);
 
-  return (
-    <>
-      <Card variant="outlined">
-        <CardContent>
-          <Typography variant="h6" className="mb-4">
-            Ações
-          </Typography>
+    const handleCancelPlan = useCallback(() => cancelPlan(), [cancelPlan]);
+    const handleReactivatePlan = useCallback(
+      () => reactivatePlan(),
+      [reactivatePlan]
+    );
 
-          <Box className="flex flex-wrap gap-3">
-            {/* Billing Portal Button */}
-            {canAccessBillingPortal && (
-              <Button
-                variant="outlined"
-                startIcon={
-                  isOpeningPortal ? (
-                    <CircularProgress size={20} />
-                  ) : (
-                    <CreditCard />
-                  )
-                }
-                onClick={handleOpenBillingPortal}
-                disabled={isOpeningPortal}
-              >
-                Gerenciar Pagamentos
-              </Button>
-            )}
+    // Memoize cancellation message based on tenant type
+    const cancellationMessage = useMemo(() => {
+      return tenantType === "CANDIDATE"
+        ? "Após essa data, seu plano será revertido para FREE."
+        : "Após essa data, será necessário contratar um novo plano para continuar usando os recursos.";
+    }, [tenantType]);
 
-            {/* Reactivate Button - only for cancelled plans */}
-            {isPlanCancelled && (
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={
-                  isReactivating ? (
-                    <CircularProgress size={20} color="inherit" />
-                  ) : (
-                    <Refresh />
-                  )
-                }
-                onClick={() => reactivatePlan()}
-                disabled={isReactivating}
-              >
-                Reativar Plano
-              </Button>
-            )}
+    return (
+      <>
+        <Card variant="outlined">
+          <CardContent>
+            <Typography variant="h6" className="mb-4">
+              Ações
+            </Typography>
 
-            {/* Cancel Button - only for active paid plans */}
-            {plan.status === "ACTIVE" && !isFree && (
-              <Button
-                variant="outlined"
-                color="error"
-                startIcon={<Cancel />}
-                onClick={() => setCancelDialogOpen(true)}
-                disabled={isCancelling}
-              >
-                Cancelar Plano
-              </Button>
-            )}
-          </Box>
-        </CardContent>
-      </Card>
+            <Box className="flex flex-wrap gap-3">
+              {/* Billing Portal Button */}
+              {canAccessBillingPortal && (
+                <Button
+                  variant="outlined"
+                  startIcon={
+                    isOpeningPortal ? (
+                      <CircularProgress size={20} />
+                    ) : (
+                      <CreditCard />
+                    )
+                  }
+                  onClick={handleOpenBillingPortal}
+                  disabled={isOpeningPortal}
+                >
+                  Gerenciar Pagamentos
+                </Button>
+              )}
 
-      {/* Cancel Confirmation Dialog */}
-      <Dialog
-        open={cancelDialogOpen}
-        onClose={() => setCancelDialogOpen(false)}
-      >
-        <DialogTitle>Confirmar Cancelamento</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Tem certeza que deseja cancelar seu plano {displayName}?
-          </Typography>
-          <Typography variant="body2" color="text.secondary" className="mt-2">
-            Você ainda terá acesso aos recursos até{" "}
-            {formatDate(plan.planExpiresAt)}.
-          </Typography>
-          <Typography variant="body2" color="text.secondary" className="mt-1">
-            {tenantType === "CANDIDATE"
-              ? "Após essa data, seu plano será revertido para FREE."
-              : "Após essa data, será necessário contratar um novo plano para continuar usando os recursos."}
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => setCancelDialogOpen(false)}
-            disabled={isCancelling}
-          >
-            Voltar
-          </Button>
-          <Button
-            onClick={() => cancelPlan()}
-            color="error"
-            variant="contained"
-            disabled={isCancelling}
-            startIcon={
-              isCancelling ? (
-                <CircularProgress size={20} color="inherit" />
-              ) : null
-            }
-          >
-            {isCancelling ? "Cancelando..." : "Confirmar Cancelamento"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </>
-  );
-};
+              {/* Reactivate Button - only for cancelled plans */}
+              {isPlanCancelled && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={
+                    isReactivating ? (
+                      <CircularProgress size={20} color="inherit" />
+                    ) : (
+                      <Refresh />
+                    )
+                  }
+                  onClick={handleReactivatePlan}
+                  disabled={isReactivating}
+                >
+                  Reativar Plano
+                </Button>
+              )}
+
+              {/* Cancel Button - only for active paid plans */}
+              {isActive && !isFree && (
+                <Button
+                  variant="outlined"
+                  color="error"
+                  startIcon={<Cancel />}
+                  onClick={openCancelDialog}
+                  disabled={isCancelling}
+                >
+                  Cancelar Plano
+                </Button>
+              )}
+            </Box>
+          </CardContent>
+        </Card>
+
+        {/* Cancel Confirmation Dialog */}
+        <Dialog open={cancelDialogOpen} onClose={closeCancelDialog}>
+          <DialogTitle>Confirmar Cancelamento</DialogTitle>
+          <DialogContent>
+            <Typography>
+              Tem certeza que deseja cancelar seu plano {displayName}?
+            </Typography>
+            <Typography variant="body2" color="text.secondary" className="mt-2">
+              Você ainda terá acesso aos recursos até {expiryDate}.
+            </Typography>
+            <Typography variant="body2" color="text.secondary" className="mt-1">
+              {cancellationMessage}
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={closeCancelDialog} disabled={isCancelling}>
+              Voltar
+            </Button>
+            <Button
+              onClick={handleCancelPlan}
+              color="error"
+              variant="contained"
+              disabled={isCancelling}
+              startIcon={
+                isCancelling ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : null
+              }
+            >
+              {isCancelling ? "Cancelando..." : "Confirmar Cancelamento"}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </>
+    );
+  }
+);
+
+PlanActionsCard.displayName = "PlanActionsCard";
