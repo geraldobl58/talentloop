@@ -355,7 +355,7 @@ export class PlansService {
     }
 
     const candidatePlans = ['FREE', 'PRO', 'PREMIUM'];
-    const companyPlans = ['STARTER', 'PROFESSIONAL', 'ENTERPRISE'];
+    const companyPlans = ['STARTUP', 'BUSINESS', 'ENTERPRISE'];
 
     const filteredPlans = plans.filter((plan) => {
       if (tenantType === 'CANDIDATE') {
@@ -385,9 +385,17 @@ export class PlansService {
     const existingSubscription =
       await this.planRepository.getCurrentSubscription(tenantId);
 
-    if (existingSubscription?.status === SubStatus.ACTIVE) {
+    // Check if user has an active PAID subscription (not FREE)
+    // FREE plans (price = 0) don't count as paid subscriptions
+    const isFreePlan = existingSubscription?.plan?.price === 0;
+    const hasActivePaidSubscription =
+      existingSubscription?.status === SubStatus.ACTIVE &&
+      !isFreePlan &&
+      existingSubscription?.stripeSubscriptionId;
+
+    if (hasActivePaidSubscription) {
       throw new BadRequestException(
-        'Já existe uma assinatura ativa para este tenant',
+        'Já existe uma assinatura paga ativa para este tenant. Use o portal de cobrança para gerenciar.',
       );
     }
 
@@ -782,11 +790,13 @@ export class PlansService {
 
   private getPlanLevel(planName: string): number {
     const levels: Record<string, number> = {
+      // Candidate plans
       FREE: 0,
       PRO: 1,
       PREMIUM: 2,
-      STARTER: 1,
-      PROFESSIONAL: 2,
+      // Company plans (no free plan for companies)
+      STARTUP: 1,
+      BUSINESS: 2,
       ENTERPRISE: 3,
     };
     return levels[planName] || 0;
@@ -834,29 +844,38 @@ export class PlansService {
     }
 
     const companyFeatures: Record<string, string[]> = {
-      STARTER: [
-        'Até 5 usuários',
-        'Até 10 vagas ativas',
-        'Gestão básica de candidatos',
-        'Relatórios básicos',
+      STARTUP: [
+        '5 vagas ativas',
+        '2 recrutadores',
+        '100 candidaturas recebidas/mês',
+        'Filtros básicos',
+        'ATS básico integrado',
+        'Suporte por email',
       ],
-      PROFESSIONAL: [
-        'Até 20 usuários',
-        'Vagas ilimitadas',
-        'Pipeline de candidatos avançado',
-        'Relatórios detalhados',
-        'Integrações básicas',
-        'Suporte prioritário',
+      BUSINESS: [
+        '20 vagas ativas',
+        '10 recrutadores',
+        '500 candidaturas/mês',
+        'Acesso ao banco de CVs (busca)',
+        'Filtros avançados completos',
+        'ATS completo integrado',
+        'Analytics de vagas',
+        'Página da empresa (Employer Branding)',
+        'Suporte por chat',
+        'SLA 99.5%',
       ],
       ENTERPRISE: [
-        'Usuários ilimitados',
         'Vagas ilimitadas',
-        'Pipeline avançado com automações',
-        'Relatórios personalizados',
-        'API completa',
-        'Integrações avançadas',
+        'Recrutadores ilimitados',
+        'Candidaturas ilimitadas',
+        'Banco de CVs completo + Export',
+        'Filtros avançados + IA',
+        'ATS customizado',
+        'Analytics + API',
+        'Página + Destaques',
+        'API de integração',
         'Suporte dedicado',
-        'SLA garantido',
+        'SLA 99.9%',
       ],
     };
     return companyFeatures[planName] || [];

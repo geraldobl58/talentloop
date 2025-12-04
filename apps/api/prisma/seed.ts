@@ -404,6 +404,7 @@ async function main() {
   // ============================
   // Create Plans - Empresas (B2B)
   // ============================
+
   const startupPlan = await prisma.plan.create({
     data: {
       name: 'STARTUP',
