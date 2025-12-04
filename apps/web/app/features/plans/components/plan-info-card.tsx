@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useMemo } from "react";
 import {
   Box,
   Card,
@@ -20,7 +21,16 @@ interface PlanInfoCardProps {
   tenantType: TenantType;
 }
 
-const getStatusColor = (status: PlanStatus) => {
+// Memoize status icons
+const StatusIcons = {
+  ACTIVE: <CheckCircle />,
+  CANCELLED: <Warning />,
+  EXPIRED: <Cancel />,
+} as const;
+
+const getStatusColor = (
+  status: PlanStatus
+): "success" | "warning" | "error" | "default" => {
   switch (status) {
     case "ACTIVE":
       return "success";
@@ -34,22 +44,40 @@ const getStatusColor = (status: PlanStatus) => {
 };
 
 const getStatusIcon = (status: PlanStatus): React.ReactElement | undefined => {
-  switch (status) {
-    case "ACTIVE":
-      return <CheckCircle />;
-    case "CANCELLED":
-      return <Warning />;
-    case "EXPIRED":
-      return <Cancel />;
-    default:
-      return undefined;
-  }
+  return StatusIcons[status] || undefined;
 };
 
-export const PlanInfoCard = ({ plan, tenantType }: PlanInfoCardProps) => {
-  const isFree = isFreePlan(plan.name, tenantType);
-  const isPlanCancelled = plan.status === "CANCELLED";
-  const displayName = getPlanDisplayName(plan.name, tenantType);
+export const PlanInfoCard = memo(({ plan, tenantType }: PlanInfoCardProps) => {
+  // Memoize computed values
+  const {
+    isFree,
+    isPlanCancelled,
+    displayName,
+    priceDisplay,
+    statusColor,
+    statusIcon,
+  } = useMemo(() => {
+    const free = isFreePlan(plan.name, tenantType);
+    return {
+      isFree: free,
+      isPlanCancelled: plan.status === "CANCELLED",
+      displayName: getPlanDisplayName(plan.name, tenantType),
+      priceDisplay: free
+        ? "Grátis"
+        : `${plan.currency} ${plan.price.toFixed(2)}/mês`,
+      statusColor: getStatusColor(plan.status),
+      statusIcon: getStatusIcon(plan.status),
+    };
+  }, [plan, tenantType]);
+
+  // Memoize formatted dates
+  const { startDate, expiryDate } = useMemo(
+    () => ({
+      startDate: formatDate(plan.createdAt),
+      expiryDate: formatDate(plan.planExpiresAt),
+    }),
+    [plan.createdAt, plan.planExpiresAt]
+  );
 
   return (
     <Card variant="outlined">
@@ -60,8 +88,8 @@ export const PlanInfoCard = ({ plan, tenantType }: PlanInfoCardProps) => {
           </Typography>
           <Chip
             label={plan.status}
-            color={getStatusColor(plan.status)}
-            icon={getStatusIcon(plan.status)}
+            color={statusColor}
+            icon={statusIcon}
             size="small"
           />
         </Box>
@@ -84,9 +112,7 @@ export const PlanInfoCard = ({ plan, tenantType }: PlanInfoCardProps) => {
                 Preço
               </Typography>
               <Typography variant="h5" className="font-bold">
-                {isFree
-                  ? "Grátis"
-                  : `${plan.currency} ${plan.price.toFixed(2)}/mês`}
+                {priceDisplay}
               </Typography>
             </Box>
           </Grid>
@@ -99,9 +125,7 @@ export const PlanInfoCard = ({ plan, tenantType }: PlanInfoCardProps) => {
             <Typography variant="body2" color="text.secondary">
               Data de Início
             </Typography>
-            <Typography variant="body1">
-              {formatDate(plan.createdAt)}
-            </Typography>
+            <Typography variant="body1">{startDate}</Typography>
           </Grid>
 
           {!isFree && (
@@ -109,9 +133,7 @@ export const PlanInfoCard = ({ plan, tenantType }: PlanInfoCardProps) => {
               <Typography variant="body2" color="text.secondary">
                 {isPlanCancelled ? "Acesso até" : "Próxima Cobrança"}
               </Typography>
-              <Typography variant="body1">
-                {formatDate(plan.planExpiresAt)}
-              </Typography>
+              <Typography variant="body1">{expiryDate}</Typography>
             </Grid>
           )}
 
@@ -127,4 +149,6 @@ export const PlanInfoCard = ({ plan, tenantType }: PlanInfoCardProps) => {
       </CardContent>
     </Card>
   );
-};
+});
+
+PlanInfoCard.displayName = "PlanInfoCard";
