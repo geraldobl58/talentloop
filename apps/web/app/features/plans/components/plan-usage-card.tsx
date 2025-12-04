@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useMemo } from "react";
 import {
   Box,
   Card,
@@ -17,21 +18,52 @@ interface PlanUsageCardProps {
   limits?: UsageLimits | null;
 }
 
-export const PlanUsageCard = ({ usage, limits }: PlanUsageCardProps) => {
-  // Safe defaults from API structure
-  const currentUsers = usage?.currentUsers ?? 0;
-  const maxUsers = usage?.maxUsers ?? 0;
-  const maxContacts = limits?.contacts?.limit ?? 0;
+const formatLimit = (value: number | null | undefined) => {
+  if (value === null || value === undefined || value === -1) return "∞";
+  return value;
+};
 
-  // Calculate percentages
-  const usersPercentage = maxUsers > 0 ? (currentUsers / maxUsers) * 100 : 0;
-  const isNearLimitUsers = maxUsers > 0 && usersPercentage >= 80;
-  const isOverLimitUsers = maxUsers > 0 && currentUsers > maxUsers;
+export const PlanUsageCard = memo(({ usage, limits }: PlanUsageCardProps) => {
+  // Memoize computed values
+  const {
+    currentUsers,
+    maxUsers,
+    maxContacts,
+    usersPercentage,
+    isNearLimitUsers,
+    isOverLimitUsers,
+    progressColor,
+  } = useMemo(() => {
+    const users = usage?.currentUsers ?? 0;
+    const max = usage?.maxUsers ?? 0;
+    const contacts = limits?.contacts?.limit ?? 0;
+    const percentage = max > 0 ? (users / max) * 100 : 0;
+    const isNear = max > 0 && percentage >= 80;
+    const isOver = max > 0 && users > max;
 
-  const formatLimit = (value: number | null | undefined) => {
-    if (value === null || value === undefined || value === -1) return "∞";
-    return value;
-  };
+    return {
+      currentUsers: users,
+      maxUsers: max,
+      maxContacts: contacts,
+      usersPercentage: percentage,
+      isNearLimitUsers: isNear,
+      isOverLimitUsers: isOver,
+      progressColor: isOver
+        ? ("error" as const)
+        : isNear
+          ? ("warning" as const)
+          : ("primary" as const),
+    };
+  }, [usage, limits]);
+
+  // Memoize formatted limits
+  const { formattedMaxUsers, formattedMaxContacts } = useMemo(
+    () => ({
+      formattedMaxUsers: formatLimit(maxUsers),
+      formattedMaxContacts: formatLimit(maxContacts),
+    }),
+    [maxUsers, maxContacts]
+  );
 
   return (
     <Card variant="outlined">
@@ -48,19 +80,13 @@ export const PlanUsageCard = ({ usage, limits }: PlanUsageCardProps) => {
                   Usuários
                 </Typography>
                 <Typography variant="body2">
-                  {currentUsers} / {formatLimit(maxUsers)}
+                  {currentUsers} / {formattedMaxUsers}
                 </Typography>
               </Box>
               <LinearProgress
                 variant="determinate"
                 value={Math.min(usersPercentage, 100)}
-                color={
-                  isOverLimitUsers
-                    ? "error"
-                    : isNearLimitUsers
-                      ? "warning"
-                      : "primary"
-                }
+                color={progressColor}
                 sx={{ height: 8, borderRadius: 4 }}
               />
               {isOverLimitUsers && (
@@ -82,9 +108,7 @@ export const PlanUsageCard = ({ usage, limits }: PlanUsageCardProps) => {
                 <Typography variant="body2" color="text.secondary">
                   Limite de Contatos
                 </Typography>
-                <Typography variant="body2">
-                  {formatLimit(maxContacts)}
-                </Typography>
+                <Typography variant="body2">{formattedMaxContacts}</Typography>
               </Box>
               <LinearProgress
                 variant="determinate"
@@ -98,4 +122,6 @@ export const PlanUsageCard = ({ usage, limits }: PlanUsageCardProps) => {
       </CardContent>
     </Card>
   );
-};
+});
+
+PlanUsageCard.displayName = "PlanUsageCard";
