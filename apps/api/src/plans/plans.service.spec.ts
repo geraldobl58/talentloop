@@ -131,9 +131,9 @@ describe('PlansService', () => {
     it('should filter plans for COMPANY tenantType', async () => {
       const mockPlans = [
         { id: '1', name: 'FREE', price: 0 },
-        { id: '2', name: 'STARTER', price: 0 },
-        { id: '3', name: 'PROFESSIONAL', price: 99 },
-        { id: '4', name: 'ENTERPRISE', price: 299 },
+        { id: '2', name: 'STARTUP', price: 99 },
+        { id: '3', name: 'BUSINESS', price: 199 },
+        { id: '4', name: 'ENTERPRISE', price: 499 },
       ];
       mockPlanRepository.getAllPlans.mockResolvedValue(mockPlans);
 
@@ -142,7 +142,7 @@ describe('PlansService', () => {
       expect(result.length).toBe(3);
       expect(
         result.every((p) =>
-          ['STARTER', 'PROFESSIONAL', 'ENTERPRISE'].includes(p.name),
+          ['STARTUP', 'BUSINESS', 'ENTERPRISE'].includes(p.name),
         ),
       ).toBe(true);
     });
