@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useMemo } from "react";
 import { Box, Card, CardContent, Typography, Grid } from "@mui/material";
 import { CheckCircle, Cancel } from "@mui/icons-material";
 
@@ -9,7 +10,22 @@ interface PlanFeaturesCardProps {
   plan: PlanInfo;
 }
 
-export const PlanFeaturesCard = ({ plan }: PlanFeaturesCardProps) => {
+export const PlanFeaturesCard = memo(({ plan }: PlanFeaturesCardProps) => {
+  // Memoize computed feature display
+  const { usersDisplay, contactsDisplay } = useMemo(
+    () => ({
+      usersDisplay:
+        plan.maxUsers === -1
+          ? "Usuários ilimitados"
+          : `${plan.maxUsers ?? 0} usuários`,
+      contactsDisplay:
+        plan.maxContacts === -1
+          ? "Contatos ilimitados"
+          : `${plan.maxContacts ?? 0} contatos`,
+    }),
+    [plan.maxUsers, plan.maxContacts]
+  );
+
   return (
     <Card variant="outlined">
       <CardContent>
@@ -31,25 +47,19 @@ export const PlanFeaturesCard = ({ plan }: PlanFeaturesCardProps) => {
           <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <Box className="flex items-center gap-2">
               <CheckCircle color="success" fontSize="small" />
-              <Typography variant="body2">
-                {plan.maxUsers === -1
-                  ? "Usuários ilimitados"
-                  : `${plan.maxUsers ?? 0} usuários`}
-              </Typography>
+              <Typography variant="body2">{usersDisplay}</Typography>
             </Box>
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <Box className="flex items-center gap-2">
               <CheckCircle color="success" fontSize="small" />
-              <Typography variant="body2">
-                {plan.maxContacts === -1
-                  ? "Contatos ilimitados"
-                  : `${plan.maxContacts ?? 0} contatos`}
-              </Typography>
+              <Typography variant="body2">{contactsDisplay}</Typography>
             </Box>
           </Grid>
         </Grid>
       </CardContent>
     </Card>
   );
-};
+});
+
+PlanFeaturesCard.displayName = "PlanFeaturesCard";
