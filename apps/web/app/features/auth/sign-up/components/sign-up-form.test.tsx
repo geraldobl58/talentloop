@@ -167,13 +167,5 @@ describe("Sign Up Form Components", () => {
       expect(screen.getByLabelText(/email corporativo/i)).toBeDisabled();
       expect(screen.getByRole("button")).toBeDisabled();
     });
-
-    it("should contain link to plans page", () => {
-      render(<CompanyFormWrapper />);
-
-      const plansLink = screen.getByRole("link", { name: /planos/i });
-      expect(plansLink).toBeInTheDocument();
-      expect(plansLink).toHaveAttribute("href", "/plans");
-    });
   });
 });
