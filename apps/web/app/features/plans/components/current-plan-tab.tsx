@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useMemo, memo } from "react";
 import { Box, Alert, CircularProgress } from "@mui/material";
 
 import { useTenantInfo } from "../hooks";
@@ -14,35 +14,66 @@ interface CurrentPlanTabProps {
   tenantType: TenantType;
 }
 
-export const CurrentPlanTab = ({ tenantType }: CurrentPlanTabProps) => {
+// Loading component memoized
+const LoadingState = memo(() => (
+  <Box className="flex items-center justify-center h-64">
+    <CircularProgress />
+  </Box>
+));
+LoadingState.displayName = "LoadingState";
+
+// Error component memoized
+const ErrorState = memo(() => (
+  <Alert severity="error">
+    Erro ao carregar informações do plano. Tente novamente mais tarde.
+  </Alert>
+));
+ErrorState.displayName = "ErrorState";
+
+export const CurrentPlanTab = memo(({ tenantType }: CurrentPlanTabProps) => {
   const { data: tenantInfo, isLoading, error } = useTenantInfo();
   const [feedback, setFeedback] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
 
+  // Memoize feedback handler
+  const handleFeedback = useCallback(
+    (newFeedback: { type: "success" | "error"; message: string }) => {
+      setFeedback(newFeedback);
+    },
+    []
+  );
+
+  // Memoize clear feedback
+  const handleClearFeedback = useCallback(() => {
+    setFeedback(null);
+  }, []);
+
+  // Memoize extracted data
+  const { plan, usage, limits } = useMemo(() => {
+    if (!tenantInfo) {
+      return { plan: null, usage: null, limits: null };
+    }
+    return {
+      plan: tenantInfo.plan,
+      usage: tenantInfo.usage,
+      limits: tenantInfo.limits,
+    };
+  }, [tenantInfo]);
+
   if (isLoading) {
-    return (
-      <Box className="flex items-center justify-center h-64">
-        <CircularProgress />
-      </Box>
-    );
+    return <LoadingState />;
   }
 
-  if (error || !tenantInfo || !tenantInfo.plan) {
-    return (
-      <Alert severity="error">
-        Erro ao carregar informações do plano. Tente novamente mais tarde.
-      </Alert>
-    );
+  if (error || !tenantInfo || !plan) {
+    return <ErrorState />;
   }
-
-  const { plan, usage, limits } = tenantInfo;
 
   return (
     <Box className="space-y-6">
       {feedback && (
-        <Alert severity={feedback.type} onClose={() => setFeedback(null)}>
+        <Alert severity={feedback.type} onClose={handleClearFeedback}>
           {feedback.message}
         </Alert>
       )}
@@ -56,8 +87,10 @@ export const CurrentPlanTab = ({ tenantType }: CurrentPlanTabProps) => {
       <PlanActionsCard
         plan={plan}
         tenantType={tenantType}
-        onFeedback={setFeedback}
+        onFeedback={handleFeedback}
       />
     </Box>
   );
-};
+});
+
+CurrentPlanTab.displayName = "CurrentPlanTab";
