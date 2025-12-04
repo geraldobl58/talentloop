@@ -1,3 +1,4 @@
+import { memo } from "react";
 import {
   Box,
   Card,
@@ -6,7 +7,7 @@ import {
   Typography,
 } from "@mui/material";
 
-export const TwoFactorLoading = () => {
+export const TwoFactorLoading = memo(() => {
   return (
     <Box className="space-y-6">
       <Card variant="outlined">
@@ -21,4 +22,6 @@ export const TwoFactorLoading = () => {
       </Card>
     </Box>
   );
-};
+});
+
+TwoFactorLoading.displayName = "TwoFactorLoading";
