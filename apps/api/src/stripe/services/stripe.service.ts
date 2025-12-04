@@ -69,6 +69,20 @@ export class StripeService {
     };
   }
 
+  /**
+   * Get checkout session details
+   */
+  async getCheckoutSession(sessionId: string) {
+    return this.stripeRepository.getCheckoutSession(sessionId);
+  }
+
+  /**
+   * Get checkout session line items
+   */
+  async getCheckoutSessionLineItems(sessionId: string) {
+    return this.stripeRepository.getCheckoutSessionLineItems(sessionId);
+  }
+
   async createBillingPortal(customerId: string, returnUrl: string) {
     return this.checkoutService.createBillingPortal(customerId, returnUrl);
   }
