@@ -7,6 +7,7 @@ import {
   Person as PersonIcon,
   Search as SearchIcon,
 } from "@mui/icons-material";
+import { createElement } from "react";
 
 interface MenuItem {
   label: string;
@@ -14,12 +15,23 @@ interface MenuItem {
   href: string;
 }
 
+// Função para criar menu items com ícones lazy
+const createMenuItem = (
+  label: string,
+  IconComponent: React.ElementType,
+  href: string
+): MenuItem => ({
+  label,
+  icon: createElement(IconComponent),
+  href,
+});
+
 export const candidateMenuItems: MenuItem[] = [
-  { label: "Dashboard", icon: <DashboardIcon />, href: "/dashboard" },
-  { label: "Buscar Vagas", icon: <SearchIcon />, href: "/jobs" },
-  { label: "Candidaturas", icon: <DescriptionIcon />, href: "/applications" },
-  { label: "Vagas Salvas", icon: <BookmarkIcon />, href: "/saved-jobs" },
-  { label: "Entrevistas", icon: <EventIcon />, href: "/interviews" },
-  { label: "Meu Plano", icon: <AddCardIcon />, href: "/my-plans" },
-  { label: "Meu Perfil", icon: <PersonIcon />, href: "/profile" },
+  createMenuItem("Dashboard", DashboardIcon, "/dashboard"),
+  createMenuItem("Buscar Vagas", SearchIcon, "/jobs"),
+  createMenuItem("Candidaturas", DescriptionIcon, "/applications"),
+  createMenuItem("Vagas Salvas", BookmarkIcon, "/saved-jobs"),
+  createMenuItem("Entrevistas", EventIcon, "/interviews"),
+  createMenuItem("Meu Plano", AddCardIcon, "/my-plans"),
+  createMenuItem("Meu Perfil", PersonIcon, "/profile"),
 ];
