@@ -29,7 +29,11 @@ export const HeaderAppBar = memo(function HeaderAppBar({
           <Typography variant="body2">{config.dashboardDescription}</Typography>
         </Box>
         <Box>
-          {data?.avatar && <Avatar alt={data.name} src={data.avatar} />}
+          {data?.avatar ? (
+            <Avatar alt={data.name} src={data.avatar} />
+          ) : (
+            <Avatar>{data?.name?.charAt(0).toUpperCase() || "U"}</Avatar>
+          )}
         </Box>
       </Toolbar>
     </AppBar>

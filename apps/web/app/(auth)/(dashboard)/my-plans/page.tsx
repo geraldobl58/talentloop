@@ -10,6 +10,7 @@ import {
 } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { getCookie } from "cookies-next";
+
 import TabContext from "@mui/lab/TabContext";
 import TabList from "@mui/lab/TabList";
 import TabPanel from "@mui/lab/TabPanel";
@@ -35,7 +36,8 @@ import { TenantType } from "@/app/shared/types/tenant-type";
 import { useVerifyCheckout } from "@/app/features/plans/hooks";
 import { RoleGuard, useRoleCheck } from "@/app/components/role-guard";
 
-// Lazy load tab components for better initial load performance
+import { PlanTab } from "@/app/enums/plan-tab";
+
 const CurrentPlanTab = lazy(() =>
   import("@/app/features/plans/components").then((mod) => ({
     default: mod.CurrentPlanTab,
@@ -52,7 +54,6 @@ const PlanHistoryTab = lazy(() =>
   }))
 );
 
-// Tab loading skeleton
 const TabSkeleton = () => (
   <Box className="space-y-4 p-4">
     <Skeleton variant="rounded" height={120} sx={{ borderRadius: 2 }} />
@@ -60,13 +61,6 @@ const TabSkeleton = () => (
   </Box>
 );
 
-enum PlanTab {
-  CURRENT = "current",
-  UPGRADE = "upgrade",
-  HISTORY = "history",
-}
-
-// Separate component to handle checkout verification
 function CheckoutVerifier({
   onVerificationStart,
   onVerificationComplete,

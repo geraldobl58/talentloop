@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+
 import TabContext from "@mui/lab/TabContext";
 import TabList from "@mui/lab/TabList";
 import TabPanel from "@mui/lab/TabPanel";
@@ -16,12 +17,7 @@ import {
   Profile2FATab,
 } from "@/app/features/profile/components";
 
-enum ProfileTab {
-  DATA = "data",
-  AVATAR = "avatar",
-  PASSWORD = "password",
-  TWO_FA = "2fa",
-}
+import { ProfileTab } from "@/app/enums/profile-tab";
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState(ProfileTab.DATA);
