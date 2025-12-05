@@ -22,11 +22,20 @@ async function fetchProfile(): Promise<UserProfile> {
   return api.get("auth/profile").json<UserProfile>();
 }
 
+// Query key for profile - exported for invalidation
+export const profileQueryKey = ["profile"] as const;
+
 export const useProfile = () => {
   return useQuery({
-    queryKey: ["profile"],
+    queryKey: profileQueryKey,
     queryFn: fetchProfile,
-    staleTime: 0, // always fresh
-    retry: false,
+    // Cache profile for 2 minutes - reduces API calls while keeping data reasonably fresh
+    staleTime: 1000 * 60 * 2,
+    // Keep in cache for 10 minutes
+    gcTime: 1000 * 60 * 10,
+    // Only retry once
+    retry: 1,
+    // Don't refetch on window focus - profile rarely changes
+    refetchOnWindowFocus: false,
   });
 };
