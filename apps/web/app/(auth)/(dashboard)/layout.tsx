@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, memo, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { getCookie, deleteCookie } from "cookies-next";
 
-import { Box, CircularProgress, CssBaseline, Toolbar } from "@mui/material";
+import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
+import CssBaseline from "@mui/material/CssBaseline";
+import Toolbar from "@mui/material/Toolbar";
 
 import { filterMenuByRole, RoleType } from "@talentloop/roles";
 
@@ -20,6 +23,17 @@ import { USER_TYPE_CONFIGS, UserType } from "@/app/shared/types/user-type";
 
 import { mapTenantTypeToUserType } from "@/app/libs/map-tenant-type-to-user-type";
 import { useProfile } from "@/app/hooks/use-profile";
+
+// Memoized loading component
+const LoadingState = memo(function LoadingState() {
+  return (
+    <Box className="min-h-screen bg-gray-50 p-6">
+      <Box className="flex items-center justify-center h-screen">
+        <CircularProgress />
+      </Box>
+    </Box>
+  );
+});
 
 export default function DashboardLayout({
   children,
@@ -55,48 +69,64 @@ export default function DashboardLayout({
     });
   }, [router]);
 
-  const handleLogout = () => {
+  // Memoize logout handler
+  const handleLogout = useCallback(() => {
     deleteCookie(APP_CONSTANTS.COOKIES.ACCESS_TOKEN);
     deleteCookie(APP_CONSTANTS.COOKIES.TENANT_TYPE);
     router.push("/auth/sign-in");
-  };
+  }, [router]);
 
-  if (isLoading || !userType || isProfileLoading) {
-    return (
-      <Box className="min-h-screen bg-gray-50 p-6">
-        <Box className="flex items-center justify-center h-screen">
-          <CircularProgress />
-        </Box>
-      </Box>
-    );
-  }
+  // Memoize config to prevent unnecessary recalculations
+  const config = useMemo(
+    () => (userType ? USER_TYPE_CONFIGS[userType] : null),
+    [userType]
+  );
 
-  const config = USER_TYPE_CONFIGS[userType];
-
-  // Extrair primeiro nome para saudação
-  const firstName = profile?.name?.split(" ")[0] || "Usuário";
-
-  // Role do usuário (apenas para empresas)
+  // Memoize user role
   const userRole = profile?.role as RoleType | undefined;
 
-  // Filtrar menu items baseado na role do usuário
-  const menuItems =
-    userType === UserType.CANDIDATE
+  // Memoize menu items based on user type and role
+  const menuItems = useMemo(() => {
+    if (!userType) return [];
+    return userType === UserType.CANDIDATE
       ? candidateMenuItems
       : filterMenuByRole(companyMenuItems, userRole);
+  }, [userType, userRole]);
 
-  // Obter título da página atual
-  const pageConfig = PAGE_TITLES[pathname] || {
-    title: config.dashboardTitle,
-    description: config.dashboardDescription,
-  };
+  // Memoize page config
+  const pageConfig = useMemo(
+    () =>
+      config
+        ? PAGE_TITLES[pathname] || {
+            title: config.dashboardTitle,
+            description: config.dashboardDescription,
+          }
+        : null,
+    [pathname, config]
+  );
 
-  // Criar config dinâmico para o header baseado na rota atual
-  const headerConfig = {
-    ...config,
-    dashboardTitle: pageConfig.title,
-    dashboardDescription: pageConfig.description,
-  };
+  // Memoize header config
+  const headerConfig = useMemo(
+    () =>
+      config && pageConfig
+        ? {
+            ...config,
+            dashboardTitle: pageConfig.title,
+            dashboardDescription: pageConfig.description,
+          }
+        : null,
+    [config, pageConfig]
+  );
+
+  // Memoize first name
+  const firstName = useMemo(
+    () => profile?.name?.split(" ")[0] || "Usuário",
+    [profile?.name]
+  );
+
+  if (isLoading || !userType || isProfileLoading || !config || !headerConfig) {
+    return <LoadingState />;
+  }
 
   return (
     <Box sx={{ display: "flex" }}>
