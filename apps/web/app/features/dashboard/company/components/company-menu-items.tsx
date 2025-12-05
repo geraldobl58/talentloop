@@ -7,6 +7,7 @@ import {
   TrendingUp as TrendingUpIcon,
   Work as WorkIcon,
 } from "@mui/icons-material";
+import { createElement } from "react";
 
 import { RoleType } from "@talentloop/roles";
 
@@ -18,24 +19,33 @@ export interface MenuItem {
   roles?: RoleType[];
 }
 
+// Função para criar menu items com ícones lazy
+const createMenuItem = (
+  label: string,
+  IconComponent: React.ElementType,
+  href: string,
+  roles?: RoleType[]
+): MenuItem => ({
+  label,
+  icon: createElement(IconComponent),
+  href,
+  ...(roles && { roles }),
+});
+
 export const companyMenuItems: MenuItem[] = [
-  { label: "Dashboard", icon: <DashboardIcon />, href: "/dashboard" },
-  { label: "Vagas", icon: <WorkIcon />, href: "/jobs" },
-  { label: "Candidatos", icon: <PeopleIcon />, href: "/candidates" },
-  { label: "Processos", icon: <AssessmentIcon />, href: "/processes" },
-  { label: "Relatórios", icon: <TrendingUpIcon />, href: "/reports" },
-  { label: "Empresa", icon: <BusinessIcon />, href: "/company" },
-  {
-    label: "Meu Plano",
-    icon: <BusinessIcon />,
-    href: "/my-plans",
-    roles: [RoleType.OWNER, RoleType.ADMIN], // Apenas OWNER e ADMIN podem ver
-  },
-  {
-    label: "Usuários",
-    icon: <PeopleIcon />,
-    href: "/users",
-    roles: [RoleType.OWNER, RoleType.ADMIN], // Apenas OWNER e ADMIN podem ver
-  },
-  { label: "Meu Perfil", icon: <SettingsIcon />, href: "/profile" },
+  createMenuItem("Dashboard", DashboardIcon, "/dashboard"),
+  createMenuItem("Vagas", WorkIcon, "/jobs"),
+  createMenuItem("Candidatos", PeopleIcon, "/candidates"),
+  createMenuItem("Processos", AssessmentIcon, "/processes"),
+  createMenuItem("Relatórios", TrendingUpIcon, "/reports"),
+  createMenuItem("Empresa", BusinessIcon, "/company"),
+  createMenuItem("Meu Plano", BusinessIcon, "/my-plans", [
+    RoleType.OWNER,
+    RoleType.ADMIN,
+  ]),
+  createMenuItem("Usuários", PeopleIcon, "/users", [
+    RoleType.OWNER,
+    RoleType.ADMIN,
+  ]),
+  createMenuItem("Meu Perfil", SettingsIcon, "/profile"),
 ];
