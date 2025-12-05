@@ -54,7 +54,9 @@ export function useAvailablePlans() {
       if (!token) throw new Error("Token de autenticação não encontrado");
       return getAvailablePlans(token);
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 10 * 60 * 1000, // 10 minutes - plans rarely change
+    gcTime: 30 * 60 * 1000, // 30 minutes
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -69,7 +71,9 @@ export function useTenantInfo() {
       if (!token) throw new Error("Token de autenticação não encontrado");
       return getTenantInfo(token);
     },
-    staleTime: 1 * 60 * 1000, // 1 minute
+    staleTime: 3 * 60 * 1000, // 3 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -84,7 +88,9 @@ export function usePlanHistory() {
       if (!token) throw new Error("Token de autenticação não encontrado");
       return getPlanHistory(token);
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -99,7 +105,9 @@ export function usePlanHistoryDetailed() {
       if (!token) throw new Error("Token de autenticação não encontrado");
       return getPlanHistoryDetailed(token);
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -114,7 +122,9 @@ export function useValidateSubscription() {
       if (!token) throw new Error("Token de autenticação não encontrado");
       return validateSubscription(token);
     },
-    staleTime: 1 * 60 * 1000,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
   });
 }
 
