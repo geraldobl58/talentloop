@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { AppBar, Avatar, Box, Toolbar, Typography } from "@mui/material";
 import { useProfile } from "../hooks/use-profile";
 
@@ -10,7 +11,9 @@ interface HeaderAppBarProps {
   };
 }
 
-export const HeaderAppBar = ({ config }: HeaderAppBarProps) => {
+export const HeaderAppBar = memo(function HeaderAppBar({
+  config,
+}: HeaderAppBarProps) {
   const { data } = useProfile();
 
   return (
@@ -31,4 +34,4 @@ export const HeaderAppBar = ({ config }: HeaderAppBarProps) => {
       </Toolbar>
     </AppBar>
   );
-};
+});
