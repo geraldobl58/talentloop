@@ -31,7 +31,12 @@ export function Providers({ children }: ProvidersProps) {
           <AuthProvider>{children}</AuthProvider>
         </ThemeProvider>
       </EmotionRegistry>
-      <ReactQueryDevtools />
+      {process.env.NODE_ENV === "development" && (
+        <ReactQueryDevtools
+          initialIsOpen={false}
+          buttonPosition="bottom-left"
+        />
+      )}
     </QueryClientProvider>
   );
 }
