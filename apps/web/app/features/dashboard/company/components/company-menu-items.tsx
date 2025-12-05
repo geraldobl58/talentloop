@@ -1,4 +1,5 @@
 import {
+  AddCard as AddCardIcon,
   Assessment as AssessmentIcon,
   Business as BusinessIcon,
   Dashboard as DashboardIcon,
@@ -39,7 +40,7 @@ export const companyMenuItems: MenuItem[] = [
   createMenuItem("Processos", AssessmentIcon, "/processes"),
   createMenuItem("Relatórios", TrendingUpIcon, "/reports"),
   createMenuItem("Empresa", BusinessIcon, "/company"),
-  createMenuItem("Meu Plano", BusinessIcon, "/my-plans", [
+  createMenuItem("Meu Plano", AddCardIcon, "/my-plans", [
     RoleType.OWNER,
     RoleType.ADMIN,
   ]),
