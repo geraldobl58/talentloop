@@ -19,63 +19,12 @@ import {
   TimelineContent,
   TimelineDot,
 } from "@mui/lab";
-import {
-  TrendingUp,
-  TrendingDown,
-  Cancel,
-  Refresh,
-  PlayArrow,
-  History,
-} from "@mui/icons-material";
 
 import { usePlanHistory, usePlanHistoryDetailed } from "../hooks";
-import { formatDate } from "@/app/libs/plans-data";
 
-// Action colors and icons
-const ACTION_CONFIG: Record<
-  string,
-  {
-    color: "success" | "error" | "warning" | "info" | "primary";
-    icon: React.ReactElement;
-    label: string;
-  }
-> = {
-  UPGRADED: {
-    color: "success",
-    icon: <TrendingUp />,
-    label: "Upgrade",
-  },
-  DOWNGRADED: {
-    color: "warning",
-    icon: <TrendingDown />,
-    label: "Downgrade",
-  },
-  CANCELED: {
-    color: "error",
-    icon: <Cancel />,
-    label: "Cancelamento",
-  },
-  REACTIVATED: {
-    color: "info",
-    icon: <Refresh />,
-    label: "Reativação",
-  },
-  CREATED: {
-    color: "primary",
-    icon: <PlayArrow />,
-    label: "Início",
-  },
-  RENEWED: {
-    color: "success",
-    icon: <Refresh />,
-    label: "Renovação",
-  },
-  EXPIRED: {
-    color: "error",
-    icon: <Cancel />,
-    label: "Expirado",
-  },
-};
+import { ACTION_CONFIG } from "@/app/constants/action-config";
+
+import { formatDate } from "@/app/libs/plans-data";
 
 export const PlanHistoryTab = () => {
   const {
@@ -122,10 +71,9 @@ export const PlanHistoryTab = () => {
       <Card variant="outlined">
         <CardContent>
           <Typography variant="h6" className="mb-4 flex items-center gap-2">
-            <History />
             Status Atual
           </Typography>
-          <Grid container spacing={2}>
+          <Grid container spacing={2} mt={2}>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Typography variant="body2" color="text.secondary">
                 Plano atual
