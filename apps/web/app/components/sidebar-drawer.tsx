@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import {
   Box,
   Chip,
@@ -38,7 +39,30 @@ interface SidebarDrawerProps {
   currentPath?: string;
 }
 
-export const SidebarDrawer = ({
+// Memoized menu item component
+const MenuItem = memo(function MenuItem({
+  item,
+  isSelected,
+}: {
+  item: { label: string; icon: React.ReactNode; href: string };
+  isSelected: boolean;
+}) {
+  return (
+    <ListItem disablePadding>
+      <ListItemButton
+        component={Link}
+        href={item.href}
+        selected={isSelected}
+        prefetch={false}
+      >
+        <ListItemIcon>{item.icon}</ListItemIcon>
+        <ListItemText primary={item.label} />
+      </ListItemButton>
+    </ListItem>
+  );
+});
+
+export const SidebarDrawer = memo(function SidebarDrawer({
   menuItems,
   userType,
   profile,
@@ -46,42 +70,39 @@ export const SidebarDrawer = ({
   handleLogout,
   config,
   currentPath,
-}: SidebarDrawerProps) => {
-  return (
-    <Drawer
-      sx={{
+}: SidebarDrawerProps) {
+  const chipColor = useMemo(
+    () => (userType === UserType.CANDIDATE ? "primary" : "secondary"),
+    [userType]
+  );
+
+  const drawerSx = useMemo(
+    () => ({
+      width: drawerWidth,
+      flexShrink: 0,
+      "& .MuiDrawer-paper": {
         width: drawerWidth,
-        flexShrink: 0,
-        "& .MuiDrawer-paper": {
-          width: drawerWidth,
-          boxSizing: "border-box",
-        },
-      }}
-      variant="permanent"
-      anchor="left"
-    >
+        boxSizing: "border-box",
+      },
+    }),
+    []
+  );
+
+  return (
+    <Drawer sx={drawerSx} variant="permanent" anchor="left">
       <Toolbar className="flex items-center justify-between px-4">
         <Logo />
-        <Chip
-          label={config.label}
-          color={userType === UserType.CANDIDATE ? "primary" : "secondary"}
-          size="small"
-        />
+        <Chip label={config.label} color={chipColor} size="small" />
       </Toolbar>
       <Divider />
       <Box className="flex flex-col justify-between h-full p-2">
         <List>
           {menuItems.map((item) => (
-            <ListItem key={item.label} disablePadding>
-              <ListItemButton
-                component={Link}
-                href={item.href}
-                selected={currentPath === item.href}
-              >
-                <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.label} />
-              </ListItemButton>
-            </ListItem>
+            <MenuItem
+              key={item.label}
+              item={item}
+              isSelected={currentPath === item.href}
+            />
           ))}
         </List>
 
@@ -106,4 +127,4 @@ export const SidebarDrawer = ({
       </Box>
     </Drawer>
   );
-};
+});
