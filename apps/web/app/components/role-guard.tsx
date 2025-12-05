@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useMemo, memo } from "react";
 import { Box, CircularProgress, Typography } from "@mui/material";
 import { RoleType, hasRequiredRole, hasMinimumRole } from "@talentloop/roles";
 import { useProfile } from "@/app/hooks/use-profile";
@@ -66,7 +66,7 @@ interface RoleGuardProps {
  *   <CompanyAdminPage />
  * </RoleGuard>
  */
-export function RoleGuard({
+export const RoleGuard = memo(function RoleGuard({
   children,
   allowedRoles,
   minimumRole,
@@ -81,10 +81,9 @@ export function RoleGuard({
   const userRole = profile?.role as RoleType | undefined;
   const tenantType = profile?.tenantType;
 
-  // Verificar acesso
-  const checkAccess = (): boolean => {
-    // Se não tem profile ainda, não verificar
-    if (!profile) return false;
+  // Memoize access check
+  const hasAccess = useMemo(() => {
+    if (isLoading || !profile) return false;
 
     // Verificar tenant type se especificado
     if (allowedTenantTypes && allowedTenantTypes.length > 0) {
@@ -122,9 +121,15 @@ export function RoleGuard({
     }
 
     return false;
-  };
-
-  const hasAccess = !isLoading && checkAccess();
+  }, [
+    isLoading,
+    profile,
+    allowedTenantTypes,
+    allowedRoles,
+    minimumRole,
+    tenantType,
+    userRole,
+  ]);
 
   useEffect(() => {
     if (!isLoading && !hasAccess && profile) {
@@ -133,19 +138,23 @@ export function RoleGuard({
     }
   }, [isLoading, hasAccess, profile, router, fallbackRoute, onAccessDenied]);
 
+  // Memoize loading box styles
+  const loadingBoxSx = useMemo(
+    () => ({
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: 400,
+      gap: 2,
+    }),
+    []
+  );
+
   // Loading state
   if (isLoading) {
     return (
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: 400,
-          gap: 2,
-        }}
-      >
+      <Box sx={loadingBoxSx}>
         <CircularProgress />
         <Typography color="text.secondary">
           Verificando permissões...
@@ -157,16 +166,7 @@ export function RoleGuard({
   // Acesso negado
   if (!hasAccess) {
     return (
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: 400,
-          gap: 2,
-        }}
-      >
+      <Box sx={loadingBoxSx}>
         <CircularProgress />
         <Typography color="text.secondary">{deniedMessage}</Typography>
       </Box>
@@ -175,7 +175,7 @@ export function RoleGuard({
 
   // Acesso permitido
   return <>{children}</>;
-}
+});
 
 /**
  * Hook para verificar permissões sem renderização
