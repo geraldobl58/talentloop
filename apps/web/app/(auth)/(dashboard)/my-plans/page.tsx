@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, Suspense } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  Suspense,
+  lazy,
+} from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { getCookie } from "cookies-next";
 import TabContext from "@mui/lab/TabContext";
@@ -13,6 +20,7 @@ import {
   Alert,
   CircularProgress,
   Snackbar,
+  Skeleton,
 } from "@mui/material";
 import {
   CreditCard,
@@ -27,11 +35,30 @@ import { TenantType } from "@/app/shared/types/tenant-type";
 import { useVerifyCheckout } from "@/app/features/plans/hooks";
 import { RoleGuard, useRoleCheck } from "@/app/components/role-guard";
 
-import {
-  CurrentPlanTab,
-  UpgradePlanTab,
-  PlanHistoryTab,
-} from "@/app/features/plans/components";
+// Lazy load tab components for better initial load performance
+const CurrentPlanTab = lazy(() =>
+  import("@/app/features/plans/components").then((mod) => ({
+    default: mod.CurrentPlanTab,
+  }))
+);
+const UpgradePlanTab = lazy(() =>
+  import("@/app/features/plans/components").then((mod) => ({
+    default: mod.UpgradePlanTab,
+  }))
+);
+const PlanHistoryTab = lazy(() =>
+  import("@/app/features/plans/components").then((mod) => ({
+    default: mod.PlanHistoryTab,
+  }))
+);
+
+// Tab loading skeleton
+const TabSkeleton = () => (
+  <Box className="space-y-4 p-4">
+    <Skeleton variant="rounded" height={120} sx={{ borderRadius: 2 }} />
+    <Skeleton variant="rounded" height={200} sx={{ borderRadius: 2 }} />
+  </Box>
+);
 
 enum PlanTab {
   CURRENT = "current",
@@ -225,15 +252,21 @@ const MyPlansPage = () => {
           </Box>
 
           <TabPanel value={PlanTab.CURRENT}>
-            <CurrentPlanTab tenantType={tenantType} />
+            <Suspense fallback={<TabSkeleton />}>
+              <CurrentPlanTab tenantType={tenantType} />
+            </Suspense>
           </TabPanel>
 
           <TabPanel value={PlanTab.UPGRADE}>
-            <UpgradePlanTab tenantType={tenantType} />
+            <Suspense fallback={<TabSkeleton />}>
+              <UpgradePlanTab tenantType={tenantType} />
+            </Suspense>
           </TabPanel>
 
           <TabPanel value={PlanTab.HISTORY}>
-            <PlanHistoryTab />
+            <Suspense fallback={<TabSkeleton />}>
+              <PlanHistoryTab />
+            </Suspense>
           </TabPanel>
         </TabContext>
       </Paper>
