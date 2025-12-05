@@ -1,3 +1,4 @@
+import { memo, useMemo, useCallback } from "react";
 import { Box, Button, Paper, Typography } from "@mui/material";
 import { formatPrice, isFreePlan, PlanOption } from "@/app/libs/plans-data";
 
@@ -7,36 +8,54 @@ interface PlanCardProps {
   onSelect: () => void;
 }
 
-export const PlanCard = ({ plan, isSelected, onSelect }: PlanCardProps) => {
-  const isFree = isFreePlan(plan);
+export const PlanCard = memo(function PlanCard({
+  plan,
+  isSelected,
+  onSelect,
+}: PlanCardProps) {
+  const isFree = useMemo(() => isFreePlan(plan), [plan]);
+
+  const handleClick = useCallback(() => {
+    onSelect();
+  }, [onSelect]);
+
+  const paperSx = useMemo(
+    () => ({
+      p: 3,
+      cursor: "pointer",
+      border: isSelected
+        ? "3px solid"
+        : plan.isPopular
+          ? "2px solid"
+          : "1px solid",
+      borderColor: isSelected
+        ? "primary.main"
+        : plan.isPopular
+          ? "primary.light"
+          : "grey.300",
+      backgroundColor: isSelected ? "primary.50" : "white",
+      transition: "all 0.2s ease-in-out",
+      position: "relative",
+      transform: plan.isPopular ? "scale(1.02)" : "none",
+      "&:hover": {
+        boxShadow: 8,
+        borderColor: "primary.main",
+        transform: "scale(1.02)",
+      },
+    }),
+    [isSelected, plan.isPopular]
+  );
+
+  const formattedPrice = useMemo(
+    () => formatPrice(plan.price, plan.currency),
+    [plan.price, plan.currency]
+  );
 
   return (
     <Paper
       elevation={isSelected ? 8 : plan.isPopular ? 4 : 2}
-      onClick={onSelect}
-      sx={{
-        p: 3,
-        cursor: "pointer",
-        border: isSelected
-          ? "3px solid"
-          : plan.isPopular
-            ? "2px solid"
-            : "1px solid",
-        borderColor: isSelected
-          ? "primary.main"
-          : plan.isPopular
-            ? "primary.light"
-            : "grey.300",
-        backgroundColor: isSelected ? "primary.50" : "white",
-        transition: "all 0.2s ease-in-out",
-        position: "relative",
-        transform: plan.isPopular ? "scale(1.02)" : "none",
-        "&:hover": {
-          boxShadow: 8,
-          borderColor: "primary.main",
-          transform: "scale(1.02)",
-        },
-      }}
+      onClick={handleClick}
+      sx={paperSx}
     >
       {/* Popular Badge */}
       {plan.isPopular && (
@@ -109,7 +128,7 @@ export const PlanCard = ({ plan, isSelected, onSelect }: PlanCardProps) => {
           fontWeight="bold"
           color={isFree ? "secondary.main" : "primary.main"}
         >
-          {formatPrice(plan.price, plan.currency)}
+          {formattedPrice}
         </Typography>
         {plan.price > 0 && (
           <Typography variant="body2" color="text.secondary">
@@ -154,4 +173,4 @@ export const PlanCard = ({ plan, isSelected, onSelect }: PlanCardProps) => {
       </Button>
     </Paper>
   );
-};
+});
